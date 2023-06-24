@@ -199,7 +199,11 @@ const Xterminal: React.FC = (props) => {
     if (sessionIdRef[id]) {
       sessionIdRef[id].sock.onclose = function (e) {
         console.log(`sock: ${id} closed`, e);
-        sessionIdRef[id].term.write("\nthis session is closed.....");
+        try {
+          sessionIdRef[id].term.write("\nthis session is closed.....");
+        } catch (e) {
+
+        }
         // removeTabByKey(id);
         window.onresize = null;
         delete sessionIdRef[id];

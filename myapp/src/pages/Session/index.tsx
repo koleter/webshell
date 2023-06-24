@@ -397,7 +397,7 @@ const Session: React.FC = () => {
       height: '100%',
       zIndex: 999
     }} onMouseEnter={() => {
-      setDrawerOpen(true);
+      sessions.length && setDrawerOpen(true);
     }}/>
     <Layout>
       <Sider
