@@ -10,11 +10,12 @@ from tornado.ioloop import IOLoop
 
 from exception.InvalidValueError import InvalidValueError
 from handler.MixinHandler import MixinHandler
+from handler.const import callback_map
 from handler.pojo.session_context import SessionContext
+from handler.pojo.worker import workers, clear_worker
 from utils import (
     UnicodeType
 )
-from handler.pojo.worker import clients
 
 try:
     from json.decoder import JSONDecodeError
@@ -29,10 +30,6 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
         self.worker_ref = None
 
     def open(self):
-        self.src_addr = self.get_client_addr()
-        logging.info('Connected from {}:{}'.format(*self.src_addr))
-
-        workers = clients.get(self.src_addr[0])
         if not workers:
             self.close(reason='Websocket authentication failed.')
             return
@@ -44,7 +41,6 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
         else:
             worker = workers.get(worker_id)
             if worker:
-                workers[worker_id] = None
                 self.set_nodelay(True)
                 worker.set_handler(self)
                 self.worker_ref = worker
@@ -53,15 +49,9 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 self.close(reason='Websocket authentication failed.')
 
     def on_message(self, message):
-        logging.debug('{!r} from {}:{}'.format(message, *self.src_addr))
         worker = self.worker_ref
         if not worker:
             # The worker has likely been closed. Do not process.
-            logging.debug(
-                "received message to closed worker from {}:{}".format(
-                    *self.src_addr
-                )
-            )
             self.close(reason='No worker found')
             return
 
@@ -121,13 +111,15 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                     'status': 'error',
                     "msg": e
                 })
+        elif type == 'callback':
+            requestId = msg.get('requestId')
+            callback_map[requestId](msg.get('args'))
+
 
     def on_close(self):
-        print('Disconnected from {}:{}'.format(*self.src_addr))
         if not self.close_reason:
             print(self.close_reason)
-
         worker = self.worker_ref if self.worker_ref else None
         if worker:
+            clear_worker(worker)
             worker.close(reason=self.close_reason)
-

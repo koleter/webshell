@@ -20,7 +20,7 @@ from utils import (
     is_valid_ip_address, is_valid_port, is_valid_hostname, to_str,
     to_int, is_valid_encoding
 )
-from handler.pojo.worker import Worker, recycle_worker, clients
+from handler.pojo.worker import Worker, recycle_worker, workers
 
 try:
     from json.decoder import JSONDecodeError
@@ -40,7 +40,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         self.ssh_client = self.get_ssh_client()
         self.debug = self.settings.get('debug', False)
         self.font = self.settings.get('font', '')
-        self.result = dict(id=None, status=None, encoding=None)
+        self.result = dict(id=None, status=None, encoding=None, sessionName=None, filePath=None)
 
     def write_error(self, status_code, **kwargs):
         if swallow_http_errors and self.request.method == 'POST':
@@ -94,37 +94,6 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
                         403, 'Connection to {}:{} is not allowed.'.format(
                             hostname, port)
                     )
-
-    def get_args(self):
-        data = json.loads(self.request.body)
-        session_conf_file_path = os.path.join(xsh_dir_path, data['filePath'])
-        with open(session_conf_file_path, 'r') as f:
-            session_conf = json.loads(f.read())
-            hostname = session_conf['hostname']
-            port = session_conf['port']
-            username = session_conf['username']
-            password = session_conf['password']
-            filename = session_conf['privatekey']
-            privatekey = ''
-            if filename.strip() != '':
-                with open(filename, 'r') as f:
-                    privatekey = f.read()
-            passphrase = session_conf['passphrase']
-            totp = session_conf['totp']
-
-        if isinstance(self.policy, paramiko.RejectPolicy):
-            self.lookup_hostname(hostname, port)
-
-        if privatekey:
-            pkey = PrivateKey(privatekey, passphrase, filename).get_pkey_obj()
-        else:
-            pkey = None
-
-        self.ssh_client.totp = totp
-        args = (hostname, port, username, password, pkey)
-        logging.debug(args)
-
-        return args
 
     def parse_encoding(self, data):
         try:
@@ -194,13 +163,36 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
 
     @tornado.gen.coroutine
     def post(self):
-        ip, port = self.get_client_addr()
-        workers = clients.get(ip, {})
         if workers and len(workers) >= options.maxconn:
             raise tornado.web.HTTPError(403, 'Too many live connections.')
 
         try:
-            args = self.get_args()
+            data = json.loads(self.request.body)
+            session_conf_file_path = os.path.join(xsh_dir_path, data['filePath'])
+            with open(session_conf_file_path, 'r') as f:
+                session_conf = json.loads(f.read())
+                hostname = session_conf['hostname']
+                port = session_conf['port']
+                username = session_conf['username']
+                password = session_conf['password']
+                filename = session_conf['privatekey']
+                privatekey = ''
+                if filename.strip() != '':
+                    with open(filename, 'r') as f:
+                        privatekey = f.read()
+                passphrase = session_conf['passphrase']
+                totp = session_conf['totp']
+
+            if isinstance(self.policy, paramiko.RejectPolicy):
+                self.lookup_hostname(hostname, port)
+
+            if privatekey:
+                pkey = PrivateKey(privatekey, passphrase, filename).get_pkey_obj()
+            else:
+                pkey = None
+
+            self.ssh_client.totp = totp
+            args = (hostname, port, username, password, pkey)
         except InvalidValueError as exc:
             raise tornado.web.HTTPError(400, str(exc))
 
@@ -212,12 +204,10 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
             logging.error(traceback.format_exc())
             self.result.update(status=str(exc))
         else:
-            if not workers:
-                clients[ip] = workers
-            worker.src_addr = (ip, port)
             workers[worker.id] = worker
             self.loop.call_later(options.delay, recycle_worker, worker)
             self.result.update(id=worker.id, encoding=worker.encoding)
+            self.result.update(sessionName=session_conf['sessionName'])
+            self.result.update(filePath=data['filePath'])
 
         self.write(self.result)
-

@@ -147,10 +147,6 @@ const Session: React.FC = () => {
 
   const [activeKey, setActiveKey] = useState('');
   const [sessions, setSessions] = useState([]);
-  const setScriptConf = (data) => {
-    setScriptData(data);
-    localStorage.setItem("scriptData", JSON.stringify(data));
-  }
 
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -289,7 +285,7 @@ const Session: React.FC = () => {
                 if (res.status !== 'success') {
                   message[res.status](res.msg);
                 } else {
-                  editForm.setFieldsValue(JSON.parse(res.content));
+                  editForm.setFieldsValue(Object.assign({key: node.key}, JSON.parse(res.content)));
                   setEditSessionModalVisiable(true);
                 }
               })
@@ -497,7 +493,19 @@ const Session: React.FC = () => {
         {
           <>
             {
-              modalNode?.isLeaf ? genSessionFormProperties() : <Form.Item
+              modalNode?.isLeaf ?
+                <>
+                  <Form.Item
+                    label="key"
+                    name="key"
+                    initialValue={""}
+                    rules={[{required: true, message: 'please enter key!'}]}
+                  >
+                    <Input disabled={true}/>
+                  </Form.Item>
+                  {genSessionFormProperties()}
+                </>
+                 : <Form.Item
                 label="文件夹名"
                 name="title"
                 initialValue={modalNode?.title}

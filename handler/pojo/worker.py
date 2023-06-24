@@ -18,19 +18,12 @@ from tornado.util import errno_from_exception
 from handler.const import BUF_SIZE
 
 
-clients = {}  # {ip: {id: worker}}
+workers = {}  # {id: worker}
 
 
-def clear_worker(worker, clients):
-    ip = worker.src_addr[0]
-    workers = clients.get(ip)
+def clear_worker(worker):
     assert worker.id in workers
     workers.pop(worker.id)
-
-    if not workers:
-        clients.pop(ip)
-        if not clients:
-            clients.clear()
 
 
 def recycle_worker(worker):
@@ -84,12 +77,10 @@ class Worker(object):
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
                 self.close(reason='chan error on reading')
         else:
-            logging.debug('{!r} from {}:{}'.format(data, *self.dst_addr))
             if not data:
                 self.close(reason='chan closed')
                 return
 
-            logging.debug('{!r} to {}:{}'.format(data, *self.handler.src_addr))
             val = str(data, 'utf-8')
             try:
                 res = {
@@ -97,7 +88,6 @@ class Worker(object):
                     'type': 'data'
                 }
                 self.handler.write_message(res, binary=False)
-                # self.handler.write_message(data, binary=False)
             except tornado.websocket.WebSocketClosedError:
                 self.close(reason='websocket closed')
 
@@ -126,12 +116,10 @@ class Worker(object):
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
                 self.close(reason='chan error on reading')
         else:
-            logging.debug('{!r} from {}:{}'.format(data, *self.dst_addr))
             if not data:
                 self.close(reason='chan closed')
                 return
 
-            logging.debug('{!r} to {}:{}'.format(data, *self.handler.src_addr))
             val = str(data, 'utf-8')
             if self.debug:
                 with open("origin.txt", 'a+') as f:
@@ -142,7 +130,6 @@ class Worker(object):
                     'type': 'data'
                 }
                 self.handler.write_message(res, binary=False)
-                # self.handler.write_message(data, binary=False)
             except tornado.websocket.WebSocketClosedError:
                 self.close(reason='websocket closed')
             handler_str = reset_font(val)
@@ -198,5 +185,3 @@ class Worker(object):
         self.ssh.close()
         logging.info('Connection to {}:{} lost'.format(*self.dst_addr))
 
-        clear_worker(self, clients)
-        logging.debug(clients)

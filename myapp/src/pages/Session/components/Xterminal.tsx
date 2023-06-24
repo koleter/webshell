@@ -99,7 +99,7 @@ const Xterminal: React.FC = (props) => {
       const terminal_container = document.querySelector('#root > div > section > div > main > section > main');
 
       const cols = parseInt(parseInt(getComputedStyle(terminal_container).width) / style.width, 10) - 2;
-      const rows = parseInt(parseInt(parseFloat(getComputedStyle(terminal_container).height) * 0.905) / style.height, 10);
+      const rows = parseInt(parseInt(parseFloat(getComputedStyle(terminal_container).height) * 0.96) / style.height, 10);
       return {'cols': cols, 'rows': rows};
     }
 
@@ -135,25 +135,24 @@ const Xterminal: React.FC = (props) => {
       for (let i = 0; i < sessionConfIds.length; i++) {
         arr.push(request(util.baseUrl, {
           method: 'POST',
-          body: JSON.stringify((Object.assign({term: 'xterm-256color'}))),
+          body: JSON.stringify({
+            filePath: sessionConfIds[0]
+          }),
         }))
       }
       Promise.all(arr).then(res => {
         for (let i = 0; i < res.length; i++) {
           if (res.status) {
-            message.error({
-              type: 'error',
-              content: res.status
-            });
+            showMessage(res);
             return;
           }
         }
-        const sessionIds = res.map(item => item.id);
         const data = [...sessions];
-        sessionIds.forEach(sessionId => {
+        res.forEach(item => {
+          data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath});
         })
         setSessions(data);
-        callback && callback(sessionIds);
+        callback && callback(res);
       })
     }
   };
@@ -173,16 +172,16 @@ const Xterminal: React.FC = (props) => {
           break;
         case 'execMethod':
           if (res.requestId) {
-            methodMap[res.method](JSON.parse(res.args), (sessionIds) => {
+            methodMap[res.method](res.args, (callbackResponse) => {
               sessionIdRef[id].send({
-                type: 'response',
-                res: sessionIds
+                type: 'callback',
+                requestId: res.requestId,
+                args: callbackResponse
               })
             })
           } else {
             methodMap[res.method](JSON.parse(res.args));
           }
-
           break;
         case 'response':
           console.log(res);
@@ -197,87 +196,26 @@ const Xterminal: React.FC = (props) => {
       }
     }
 
-    sessionIdRef[id].sock.onclose = function (e) {
-      console.log(`sock: ${id} closed`, e);
-      sessionIdRef[id].term.write("\nthis session is closed.....");
-      // removeTabByKey(id);
-      window.onresize = null;
-      delete sessionIdRef[id];
-    };
+    if (sessionIdRef[id]) {
+      sessionIdRef[id].sock.onclose = function (e) {
+        console.log(`sock: ${id} closed`, e);
+        sessionIdRef[id].term.write("\nthis session is closed.....");
+        // removeTabByKey(id);
+        window.onresize = null;
+        delete sessionIdRef[id];
+      };
 
-    sessionIdRef[id].sock.onmessage = function (msg) {
-      const res = JSON.parse(msg.data);
-      wsockCallback(res);
-    };
-  }, [sessions])
-
-
-  const scriptData = [
-    {
-      name: '现网通过traceId查找日志',
-      method: () => {
-        const traceid = prompt("请输入traceId");
-        if (!traceid) {
-          return;
-        }
-        const input = prompt("请输入堡垒机id,逗号隔开");
-        if (!input) {
-          return;
-        }
-        const codes = input.split(",");
-        const arr = [];
-        for (let i = 0; i < codes.length; i++) {
-          arr.push(request(util.baseUrl, {
-            method: 'POST',
-            body: JSON.stringify((Object.assign({term: 'xterm-256color'}))),
-          }))
-        }
-        Promise.all(arr).then(res => {
-          for (let i = 0; i < res.length; i++) {
-            if (res.status) {
-              message.error({
-                type: 'error',
-                content: res.status
-              });
-              return;
-            }
-          }
-          const data = [...sessions];
-          res.forEach(item => {
-
-          })
-          setSessions(data);
-
-          let idx = 0;
-          res.forEach((item) => {
-            setTimeout(() => {
-              sessionIdRef[item.id].sendData(codes[idx]);
-              sessionIdRef[item.id].sendData("su");
-              idx++;
-            }, 1000);
-          })
-        })
-      }
-    },
-    {
-      name: '删除其它session',
-      method: () => {
-       const data = [...sessions].filter(session => session.key === id);
-       setSessions(data);
-      }
+      sessionIdRef[id].sock.onmessage = function (msg) {
+        const res = JSON.parse(msg.data);
+        wsockCallback(res);
+      };
     }
-  ];
+  }, [sessions])
 
   const renderElement = () => {
     return (
-      <div style={{display: id === activeKey ? 'block' : 'none'}} className="terminal-container" items={sessions}>
+      <div style={{display: id === activeKey ? 'block' : 'none'}}>
         <div ref={terminalRef}></div>
-        <List
-          size="small"
-          dataSource={scriptData}
-          style={{overflow: 'auto'}}
-          renderItem={(item) => <Button onClick={item.method}>{item.name}</Button>}
-        />
       </div>
     )
   }

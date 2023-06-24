@@ -115,30 +115,3 @@ class MixinHandler(object):
         if not value:
             raise InvalidValueError('Missing value {}'.format(name))
         return value
-
-    def get_context_addr(self):
-        return self.context.address[:2]
-
-    def get_client_addr(self):
-        if options.xheaders:
-            return self.get_real_client_addr() or self.get_context_addr()
-        else:
-            return self.get_context_addr()
-
-    def get_real_client_addr(self):
-        ip = self.request.remote_ip
-
-        if ip == self.request.headers.get('X-Real-Ip'):
-            port = self.request.headers.get('X-Real-Port')
-        elif ip in self.request.headers.get('X-Forwarded-For', ''):
-            port = self.request.headers.get('X-Forwarded-Port')
-        else:
-            # not running behind an nginx server
-            return
-
-        port = to_int(port)
-        if port is None or not is_valid_port(port):
-            # fake port
-            port = 65535
-
-        return (ip, port)
