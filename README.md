@@ -15,7 +15,7 @@
 网上找了一些ssh客户端工具,发现基本都没有脚本功能,之后在github上找到了一个webssh的项目,在此基础上自己尝试着
 做了这么一个工具出来
 
-该项目使用了tornado,websocket,antd,xterm
+该项目运用了tornado,websocket,antd,xterm这些技术
 
 ### Preview
 
@@ -29,8 +29,8 @@
 
 ![addScript.jpg](preview%2FaddScript.jpg)
 
-脚本名是显示在界面上的按钮名字,一个脚本对应着一个python脚本,python文件路径为一个python文件的绝对路径
-一个脚本按钮的类型分为两种,公共表示所有的会话都可以使用该按钮,当前会话表示只有当前的会话可以使用的按钮(表现为
+脚本名是显示在界面上的按钮名字,python文件路径为一个python文件的绝对路径,
+一个脚本按钮的类型分为两种,公共表示所有的会话都可以使用该按钮,当前会话表示只有当前的会话可以使用的按钮(
 其他的会话处于活跃状态时无法看到该按钮)
 
 python脚本的入口为Main函数,接受一个形参,该参数为handler.pojo.session_context.SessionContext类的一个实例对象,
