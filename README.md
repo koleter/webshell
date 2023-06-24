@@ -43,5 +43,3 @@ def Main(ctx):
     ctx.send('pwd\r')
 ```
 该脚本在运行时会向当前的会话发送pwd命令
-
-
