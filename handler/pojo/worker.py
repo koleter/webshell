@@ -3,7 +3,7 @@ import paramiko
 import threading
 import time
 
-from utils import reset_font
+from utils import reset_font, gen_id
 
 try:
     import secrets
@@ -47,7 +47,7 @@ class Worker(object):
         self.chan = chan
         self.dst_addr = dst_addr
         self.fd = chan.fileno()
-        self.id = self.gen_id()
+        self.id = gen_id()
         self.data_to_dst = []
         self.handler = None
         self.mode = IOLoop.READ
@@ -63,10 +63,6 @@ class Worker(object):
         if events & IOLoop.ERROR:
             self.close(reason='error event occurred')
 
-
-    @classmethod
-    def gen_id(cls):
-        return secrets.token_urlsafe(nbytes=32) if secrets else uuid4().hex
 
     def set_handler(self, handler):
         if not self.handler:

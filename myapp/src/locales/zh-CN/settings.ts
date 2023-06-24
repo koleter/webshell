@@ -52,4 +52,8 @@ export default {
   'app.settings.notification.todo-description': '待办任务将以站内信的形式通知',
   'app.settings.open': '开',
   'app.settings.close': '关',
+  'pages.session.search': '查询',
+  'pages.session.add': '添加',
+  'pages.session.edit': '编辑',
+  'pages.session.delete': '删除'
 };

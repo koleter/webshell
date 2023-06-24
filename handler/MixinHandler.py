@@ -106,8 +106,8 @@ class MixinHandler(object):
             self.set_header(*header)
         self.set_header("Access-Control-Allow-Origin", '*')
         self.set_header("Access-Control-Allow-Credentials", "true")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with,token")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header("Access-Control-Allow-Headers", "*")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
         self.set_header("Access-Control-Max-Age", 1000)
 
     def get_value(self, name):

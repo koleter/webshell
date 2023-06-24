@@ -1,5 +1,6 @@
 import json
 import logging
+import os.path
 import socket
 import traceback
 import paramiko
@@ -10,10 +11,11 @@ from tornado.options import options
 from tornado.process import cpu_count
 
 from exception.InvalidValueError import InvalidValueError
+from handler.ConfigHandler import xsh_dir_path
 from handler.MixinHandler import MixinHandler
 from handler.pojo.PrivateKey import PrivateKey
 from handler.pojo.SSHClient import SSHClient
-from handler.const import swallow_http_errors, DEFAULT_PORT
+from handler.const import swallow_http_errors, DEFAULT_PORT, TERM
 from utils import (
     is_valid_ip_address, is_valid_port, is_valid_hostname, to_str,
     to_int, is_valid_encoding
@@ -95,18 +97,20 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
 
     def get_args(self):
         data = json.loads(self.request.body)
-        hostname = data['hostname']
-        port = data['port']
-        username = data['username']
-        password = data['password']
-        filename = data['privatekey']
-        term = data['term']
-        privatekey = ''
-        if filename.strip() != '':
-            with open(filename, 'r') as f:
-                privatekey = f.read()
-        passphrase = data['passphrase']
-        totp = data['totp']
+        session_conf_file_path = os.path.join(xsh_dir_path, data['filePath'])
+        with open(session_conf_file_path, 'r') as f:
+            session_conf = json.loads(f.read())
+            hostname = session_conf['hostname']
+            port = session_conf['port']
+            username = session_conf['username']
+            password = session_conf['password']
+            filename = session_conf['privatekey']
+            privatekey = ''
+            if filename.strip() != '':
+                with open(filename, 'r') as f:
+                    privatekey = f.read()
+            passphrase = session_conf['passphrase']
+            totp = session_conf['totp']
 
         if isinstance(self.policy, paramiko.RejectPolicy):
             self.lookup_hostname(hostname, port)
@@ -117,7 +121,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
             pkey = None
 
         self.ssh_client.totp = totp
-        args = (hostname, port, username, password, pkey, term)
+        args = (hostname, port, username, password, pkey)
         logging.debug(args)
 
         return args
@@ -174,27 +178,13 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         except paramiko.BadHostKeyException:
             raise ValueError('Bad host key.')
 
-        term = args[-1] or u'xterm'
-        chan = ssh.invoke_shell(term=term)
+        chan = ssh.invoke_shell(term=TERM)
         chan.setblocking(0)
         worker = Worker(self.loop, ssh, chan, dst_addr, self.debug)
         worker.encoding = options.encoding if options.encoding else \
             self.get_default_encoding(ssh)
         return worker
 
-    def check_origin(self):
-        event_origin = self.get_argument('_origin', u'')
-        header_origin = self.request.headers.get('Origin')
-        origin = event_origin or header_origin
-
-        if origin:
-            if not super(IndexHandler, self).check_origin(origin):
-                raise tornado.web.HTTPError(
-                    403, 'Cross origin operation is not allowed.'
-                )
-
-            if not event_origin and self.origin_policy != 'same':
-                self.set_header('Access-Control-Allow-Origin', origin)
 
     def head(self):
         pass
@@ -208,8 +198,6 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         workers = clients.get(ip, {})
         if workers and len(workers) >= options.maxconn:
             raise tornado.web.HTTPError(403, 'Too many live connections.')
-
-        # self.check_origin()
 
         try:
             args = self.get_args()

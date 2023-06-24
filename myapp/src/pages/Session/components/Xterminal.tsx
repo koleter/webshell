@@ -2,9 +2,9 @@ import {useEffect, useRef, useState} from "react";
 import React from "react";
 import {Terminal} from "xterm"
 import "xterm/css/xterm.css"
-import util, {sleep, msgMap, getUUid} from "../../../util"
+import util, {sleep, msgMap, getUUid, showMessage} from "../../../util"
 import {Button, List, message} from 'antd';
-import {sessionConfInfoMap, sessionIdRef} from "../index"
+import {sessionIdRef} from "../index"
 import {request} from 'umi';
 
 const termOptions = {
@@ -23,7 +23,7 @@ const style = {};
 const Xterminal: React.FC = (props) => {
   const terminalRef = useRef<null | HTMLDivElement>(null);
   let {id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey} = props;
-  console.log(id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey);
+  // console.log(id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey);
 
   useEffect(() => {
     const ws_url = util.baseUrl.split(/\?|#/, 1)[0].replace('http', 'ws'),
@@ -86,55 +86,6 @@ const Xterminal: React.FC = (props) => {
       }
     };
 
-    function read_as_text_with_decoder(file, callback, decoder) {
-      let reader = new window.FileReader();
-
-      if (decoder === undefined) {
-        decoder = new window.TextDecoder('utf-8', {'fatal': true});
-      }
-
-      reader.onload = function () {
-        let text;
-        try {
-          text = decoder.decode(reader.result);
-        } catch (TypeError) {
-          console.log('Decoding error happened.');
-        } finally {
-          if (callback) {
-            callback(text);
-          }
-        }
-      };
-
-      reader.onerror = function (e) {
-        console.error(e);
-      };
-
-      reader.readAsArrayBuffer(file);
-    }
-
-
-    function read_as_text_with_encoding(file, callback, encoding) {
-      let reader = new window.FileReader();
-
-      if (encoding === undefined) {
-        encoding = 'utf-8';
-      }
-
-      reader.onload = function () {
-        if (callback) {
-          callback(reader.result);
-        }
-      };
-
-      reader.onerror = function (e) {
-        console.error(e);
-      };
-
-      reader.readAsText(file, encoding);
-    }
-
-
     function get_cell_size(term) {
       style.width = term._core._renderService._renderer.dimensions.css.cell.width;
       style.height = term._core._renderService._renderer.dimensions.css.cell.height;
@@ -155,14 +106,6 @@ const Xterminal: React.FC = (props) => {
     function resize_terminal(term) {
       const geometry = current_geometry(term);
       term.on_resize(geometry.cols, geometry.rows);
-    }
-
-    function read_file_as_text(file, callback, decoder) {
-      if (!window.TextDecoder) {
-        read_as_text_with_encoding(file, callback, decoder);
-      } else {
-        read_as_text_with_decoder(file, callback, decoder);
-      }
     }
 
     sock.onerror = function (e) {
@@ -192,7 +135,7 @@ const Xterminal: React.FC = (props) => {
       for (let i = 0; i < sessionConfIds.length; i++) {
         arr.push(request(util.baseUrl, {
           method: 'POST',
-          body: JSON.stringify((Object.assign({term: 'xterm-256color'}, sessionConfInfoMap[sessionConfIds[i]]))),
+          body: JSON.stringify((Object.assign({term: 'xterm-256color'}))),
         }))
       }
       Promise.all(arr).then(res => {
@@ -208,7 +151,6 @@ const Xterminal: React.FC = (props) => {
         const sessionIds = res.map(item => item.id);
         const data = [...sessions];
         sessionIds.forEach(sessionId => {
-          data.push({label: sessionConfInfoMap[sessionId]['sessionName'], key: sessionId});
         })
         setSessions(data);
         callback && callback(sessionIds);
@@ -227,7 +169,7 @@ const Xterminal: React.FC = (props) => {
           term_write(res.val);
           break;
         case 'message':
-          message[res.status](res.msg);
+          showMessage(res);
           break;
         case 'execMethod':
           if (res.requestId) {
@@ -255,9 +197,11 @@ const Xterminal: React.FC = (props) => {
       }
     }
 
-    sessionIdRef[id].sock.onclose = function () {
-      console.log(`close: ${id}`);
-      removeTabByKey(id);
+    sessionIdRef[id].sock.onclose = function (e) {
+      console.log(`sock: ${id} closed`, e);
+      sessionIdRef[id].term.write("\nthis session is closed.....");
+      // removeTabByKey(id);
+      window.onresize = null;
       delete sessionIdRef[id];
     };
 
@@ -285,7 +229,7 @@ const Xterminal: React.FC = (props) => {
         for (let i = 0; i < codes.length; i++) {
           arr.push(request(util.baseUrl, {
             method: 'POST',
-            body: JSON.stringify((Object.assign({term: 'xterm-256color'}, sessionConfInfoMap[sessionConfId]))),
+            body: JSON.stringify((Object.assign({term: 'xterm-256color'}))),
           }))
         }
         Promise.all(arr).then(res => {
@@ -300,7 +244,7 @@ const Xterminal: React.FC = (props) => {
           }
           const data = [...sessions];
           res.forEach(item => {
-            data.push({label: sessionConfInfoMap[sessionConfId]['sessionName'], key: item.id});
+
           })
           setSessions(data);
 

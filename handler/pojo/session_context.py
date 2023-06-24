@@ -24,15 +24,17 @@ class SessionContext:
         return self.worker.on_recv(data)
 
 
-    def create_new_session(self, conf_id_list, callback):
+    def create_new_session(self, conf_id_list, callback=None):
         '''
         创建新的session
         conf_id_list: 一个列表,表示session配置文件的id
         '''
-        req_id = str(uuid.uuid1())
-        self.worker.handler.write_message({
-            'requestId': req_id,
+        message = {
             'args': conf_id_list,
             'type': 'execMethod',
             'method': 'createNewSession'
-        })
+        }
+        if callback:
+            req_id = str(uuid.uuid1())
+            message['requestId'] = req_id
+        self.worker.handler.write_message(message)

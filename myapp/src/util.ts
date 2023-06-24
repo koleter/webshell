@@ -1,4 +1,4 @@
-import {sessionConfInfoMap} from "@/pages/Session";
+import {message} from 'antd';
 
 export default {
   baseUrl: "http://localhost:8888/"
@@ -16,4 +16,10 @@ export function getUUid(): string {
       v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+}
+
+export function showMessage(res) {
+  message[res.status]({
+    content: res.content
+  })
 }

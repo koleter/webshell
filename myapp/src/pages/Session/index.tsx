@@ -1,4 +1,4 @@
-import {Dropdown, Form, Input, Layout, Drawer, Modal, Tabs, Tree, message, Space, Tag, Button, Upload} from 'antd';
+import {Dropdown, Form, Input, Layout, Drawer, Modal, Tabs, Tree, message, Space, Tag, Button, Radio} from 'antd';
 import {ProList} from '@ant-design/pro-components';
 import type {DataNode, TreeProps} from 'antd/es/tree';
 import React, {useRef, useState, useEffect} from 'react';
@@ -7,17 +7,86 @@ import "xterm/css/xterm.css"
 import {request, FormattedMessage} from 'umi';
 import util, {msgMap, sleep, getUUid} from '../../util'
 import Xterminal from "@/pages/Session/components/Xterminal";
-import {scriptDataSource, defaultTreeData, SESSION_CONF_INFO_MAP} from './init'
 
 
 const {DirectoryTree} = Tree;
 const {Content, Sider} = Layout;
 type TargetKey = React.MouseEvent | React.KeyboardEvent | string;
+let sessionRootKey = "";
 
-/*window.addEventListener('resize', (e) => {
-  console.log(e);
-  console.log(document.body.clientWidth)
-});*/
+const sessionIdMapFileName = {};
+
+function genSessionFormProperties() {
+  return <>
+    <Form.Item
+      label="会话名"
+      name="sessionName"
+      initialValue={""}
+      rules={[{required: true, message: '请输入会话名!'}]}
+    >
+      <Input/>
+    </Form.Item>
+
+    <Form.Item
+      label="主机"
+      name="hostname"
+      initialValue={""}
+      rules={[{required: true, message: '请输入主机!'}]}
+    >
+      <Input/>
+    </Form.Item>
+
+    <Form.Item
+      label="端口"
+      name="port"
+      initialValue={22}
+      rules={[{required: true, message: '请输入端口!'}]}
+    >
+      <Input/>
+    </Form.Item>
+
+    <Form.Item
+      label="用户名"
+      name="username"
+      initialValue={""}
+      rules={[{required: true, message: '请输入用户名!'}]}
+    >
+      <Input/>
+    </Form.Item>
+
+    <Form.Item
+      label="密码"
+      name="password"
+      initialValue={""}
+    >
+      <Input.Password/>
+    </Form.Item>
+
+    <Form.Item
+      label="密钥文件路径"
+      name="privatekey"
+      initialValue={""}
+    >
+      <Input/>
+    </Form.Item>
+
+    <Form.Item
+      label="密钥密码"
+      name="passphrase"
+      initialValue={""}
+    >
+      <Input.Password/>
+    </Form.Item>
+
+    <Form.Item
+      label="totp"
+      name="totp"
+      initialValue={""}
+    >
+      <Input/>
+    </Form.Item>
+  </>
+}
 
 export const sessionIdRef = {};
 
@@ -38,29 +107,43 @@ const loop = (
   }
 };
 
-function initSessionInfoMap() {
-  const result = {};
-
-  function dfs(treeData) {
-    for (let i = 0; i < treeData.length; i++) {
-      result[treeData[i].key] = treeData[i];
-      if (treeData[i].children) {
-        dfs(treeData[i].children!);
-      }
-    }
-  }
-
-  dfs(defaultTreeData);
-  return result;
-}
-
-export const sessionConfInfoMap = (localStorage.getItem(SESSION_CONF_INFO_MAP) && JSON.parse(localStorage.getItem(SESSION_CONF_INFO_MAP))) || initSessionInfoMap(defaultTreeData);
-
 const Session: React.FC = () => {
-  const [treeData, setTreeData] = useState(defaultTreeData);
+  const [treeData, setTreeData] = useState([]);
+  const [refreshTreeData, setRefreshTreeData] = useState(0);
+  const [refreshScriptData, setRefreshScriptData] = useState(0);
+  const [scriptData, setScriptData] = useState([]);
+
+  useEffect(() => {
+    request(util.baseUrl + 'conf', {
+      method: 'GET',
+      params: {
+        type: 'ScriptConfig',
+      },
+    }).then(res => {
+      if (res.status !== 'success') {
+        message[res.status](res.msg);
+      }
+      setScriptData(res.scriptData);
+    })
+  }, [refreshScriptData])
+
+  useEffect(() => {
+    request(util.baseUrl + 'conf', {
+      method: 'GET',
+      params: {
+        type: 'SessionConfig',
+      },
+    }).then(res => {
+      if (res.status !== 'success') {
+        message[res.status](res.msg);
+      }
+      sessionRootKey = res.defaultTreeData[0].key;
+      setTreeData(res.defaultTreeData);
+    })
+  }, [refreshTreeData])
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scriptSearchValue, setScriptSearchValue] = useState("");
-  const [scriptData, setScriptData] = useState(scriptDataSource || []);
+
 
   const [activeKey, setActiveKey] = useState('');
   const [sessions, setSessions] = useState([]);
@@ -79,18 +162,11 @@ const Session: React.FC = () => {
   const [addScriptModalVisiable, setAddScriptModalVisiable] = useState(false);
   const [editScriptModalVisiable, setEditScriptModalVisiable] = useState(false);
 
-  function saveSessionConfig() {
-    localStorage.setItem(SESSION_CONF_INFO_MAP, JSON.stringify(sessionConfInfoMap));
-    localStorage.setItem("session", JSON.stringify(treeData));
-  }
-
   const onChange = (newActiveKey: string) => {
     setActiveKey(newActiveKey);
   };
 
   const removeTabByKey = (targetKey: TargetKey) => {
-    console.log(`removeTabByKey: ${targetKey}`);
-
     try {
       sessionIdRef[targetKey].sock.close();
     } catch (e) {
@@ -119,82 +195,37 @@ const Session: React.FC = () => {
     delete sessionIdRef[targetKey];
 
     setActiveKey(newActiveKey);
-    // console.log(`items: ${JSON.stringify(newPanes)}`)
-    // console.log(`activeKey: ${activeKey}`)
-    // console.log(`sessionIdRef: ${JSON.stringify(sessionIdRef)}`)
   };
 
   const onEdit = (
     targetKey: React.MouseEvent | React.KeyboardEvent | string,
     action: 'add' | 'remove',
   ) => {
-    // if (action === 'add') {
-    //   add();
-    // } else {
     removeTabByKey(targetKey);
-    // }
-  };
-
-
-  const onDragEnter: TreeProps['onDragEnter'] = (info) => {
-    console.log(info);
-    // expandedKeys 需要受控时设置
-    // setExpandedKeys(info.expandedKeys)
   };
 
   const onDrop: TreeProps['onDrop'] = (info) => {
-    console.log(info);
     const dropKey = info.node.key;
     const dragKey = info.dragNode.key;
-    const dropPos = info.node.pos.split('-');
-    const dropPosition = info.dropPosition - Number(dropPos[dropPos.length - 1]);
-
-    const data = [...treeData];
-
-    // Find dragObject
-    let dragObj: DataNode;
-    loop(data, dragKey, (item, index, arr) => {
-      arr.splice(index, 1);
-      dragObj = item;
-      return true;
-    });
-
-    if (!info.dropToGap) {
-      // Drop on the content
-      loop(data, dropKey, (item) => {
-        item.children = item.children || [];
-        // where to insert 示例添加到头部，可以是随意位置
-        item.children.unshift(dragObj);
-        return true;
-      });
-    } else if (
-      ((info.node as any).props.children || []).length > 0 && // Has children
-      (info.node as any).props.expanded && // Is expanded
-      dropPosition === 1 // On the bottom gap
-    ) {
-      loop(data, dropKey, (item) => {
-        item.children = item.children || [];
-        // where to insert 示例添加到头部，可以是随意位置
-        item.children.unshift(dragObj);
-        // in previous version, we use item.children.push(dragObj) to insert the
-        // item to the tail of the children
-        return true;
-      });
-    } else {
-      let ar: DataNode[] = [];
-      let i: number;
-      loop(data, dropKey, (_item, index, arr) => {
-        ar = arr;
-        i = index;
-        return true;
-      });
-      if (dropPosition === -1) {
-        ar.splice(i!, 0, dragObj!);
-      } else {
-        ar.splice(i! + 1, 0, dragObj!);
-      }
+    if (dragKey.substr(0, dragKey.lastIndexOf("\\")) == dropKey) {
+      return;
     }
-    setTreeData(data);
+    request(util.baseUrl + 'conf', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'SessionConfig',
+        args: {
+          type: 'moveFileOrDir',
+          src: dragKey,
+          dst: dropKey
+        }
+      }),
+    }).then(res => {
+      message[res.status](res.msg);
+      if (res.status == 'success') {
+        setRefreshTreeData(e => e + 1);
+      }
+    })
   };
 
   const [modalNode, setModalNode] = useState(null);
@@ -209,27 +240,21 @@ const Session: React.FC = () => {
             if (!dirName) {
               return;
             }
-            const data = [...treeData];
-            if (!node.children) {
-              node.children = [];
-            }
-
-            const dropKey = node.key;
-            loop(data, dropKey, (item) => {
-              item.children = item.children || [];
-              const uuid = getUUid();
-              const newNode = {
-                title: dirName,
-                key: uuid,
-                isLeaf: false,
-              };
-              item.children.unshift(newNode);
-              sessionConfInfoMap[uuid] = newNode;
-              saveSessionConfig();
-              return true;
-            });
-
-            setTreeData(data);
+            request(util.baseUrl + 'conf', {
+              method: 'POST',
+              body: JSON.stringify({
+                type: 'SessionConfig',
+                args: {
+                  type: 'createDir',
+                  path: node.key ? node.key + '/' + dirName : dirName
+                }
+              }),
+            }).then(res => {
+              message[res.status](res.msg);
+              if (res.status == 'success') {
+                setRefreshTreeData(e => e + 1)
+              }
+            })
           }}>新增文件夹</span>
         ),
         key: 'addFolder',
@@ -245,45 +270,76 @@ const Session: React.FC = () => {
       });
     }
 
-    items.push({
-      label: (
-        <span onClick={() => {
-          setModalNode(node);
-          editForm.setFieldsValue(sessionConfInfoMap[node?.key])
-          setEditSessionModalVisiable(true);
-        }}>编辑</span>
-      ),
-      key: 'edit',
-    }, {
-      label: (
-        <span onClick={() => {
-          const data = [...treeData];
-          let ar: DataNode[] = [];
-          const dropKey = node.key;
-          let i: number;
-          loop(data, dropKey, (_item, index, arr) => {
-            ar = arr;
-            i = index;
-            return true;
-          });
-          const delNode = ar[i];
-          ar.splice(i, 1);
-          delete sessionConfInfoMap[delNode.key];
-          saveSessionConfig();
-          setTreeData(data);
-        }}>删除</span>
-      ),
-      key: 'delete',
-    });
+    if (sessionRootKey != node.key) {
+      items.push({
+        label: (
+          <span onClick={() => {
+            setModalNode(node);
+            if (node.isLeaf) {
+              request(util.baseUrl + 'conf', {
+                method: 'POST',
+                body: JSON.stringify({
+                  type: 'SessionConfig',
+                  args: {
+                    type: 'readFile',
+                    path: node.key,
+                  }
+                }),
+              }).then(res => {
+                if (res.status !== 'success') {
+                  message[res.status](res.msg);
+                } else {
+                  editForm.setFieldsValue(JSON.parse(res.content));
+                  setEditSessionModalVisiable(true);
+                }
+              })
+            } else {
+              editForm.setFieldsValue(node);
+              setEditSessionModalVisiable(true);
+            }
+          }}>编辑</span>
+        ),
+        key: 'edit',
+      }, {
+        label: (
+          <span onClick={() => {
+            request(util.baseUrl + 'conf', {
+              method: 'POST',
+              body: JSON.stringify({
+                type: 'SessionConfig',
+                args: {
+                  type: 'deleteFile',
+                  path: node.key
+                }
+              }),
+            }).then(res => {
+              message[res.status](res.msg);
+              if (res.status == 'success') {
+                setRefreshTreeData(e => e + 1);
+              }
+            })
+          }}>删除</span>
+        ),
+        key: 'delete',
+      });
+    }
 
     return {items}
   }
 
-  async function createNewSession(key, label, callback) {
+  /**
+   *
+   * @param filePath  session配置文件的路径
+   * @param title     新建session会话的标题
+   * @param callback  回调函数,参数是新创建的session会话的id
+   */
+  async function createNewSession(filePath, title, callback) {
     // xterm-256color
     request(util.baseUrl, {
       method: 'POST',
-      body: JSON.stringify((Object.assign({term: 'xterm-256color'}, sessionConfInfoMap[key]))),
+      body: JSON.stringify({
+        filePath
+      }),
     }).then(res => {
       if (res.status) {
         message.error({
@@ -292,9 +348,9 @@ const Session: React.FC = () => {
         });
         return;
       }
-
+      sessionIdMapFileName[res.id] = filePath.substr(filePath.lastIndexOf('\\') + 1);
       const data = [...sessions];
-      data.push({label: label, key: res.id, sessionConfId: key});
+      data.push({label: title, key: res.id, sessionConfId: filePath});
       setSessions(data);
       setActiveKey(res.id);
       callback && callback(res.id);
@@ -309,82 +365,9 @@ const Session: React.FC = () => {
             return;
           }
           createNewSession(nodeData.key, nodeData.title);
-
         }}>{nodeData.title}</span>
       </Dropdown>
     );
-  }
-
-  function genSessionFormProperties() {
-    return <>
-      <Form.Item
-        label="会话名"
-        name="sessionName"
-        initialValue={""}
-        rules={[{required: true, message: '请输入会话名!'}]}
-      >
-        <Input/>
-      </Form.Item>
-
-      <Form.Item
-        label="主机"
-        name="hostname"
-        initialValue={""}
-        rules={[{required: true, message: '请输入主机!'}]}
-      >
-        <Input/>
-      </Form.Item>
-
-      <Form.Item
-        label="端口"
-        name="port"
-        initialValue={22}
-        rules={[{required: true, message: '请输入端口!'}]}
-      >
-        <Input/>
-      </Form.Item>
-
-      <Form.Item
-        label="用户名"
-        name="username"
-        initialValue={""}
-        rules={[{required: true, message: '请输入用户名!'}]}
-      >
-        <Input/>
-      </Form.Item>
-
-      <Form.Item
-        label="密码"
-        name="password"
-        initialValue={""}
-      >
-        <Input.Password/>
-      </Form.Item>
-
-      <Form.Item
-        label="密钥文件路径"
-        name="privatekey"
-        initialValue={""}
-      >
-        <Input/>
-      </Form.Item>
-
-      <Form.Item
-        label="密钥密码"
-        name="passphrase"
-        initialValue={""}
-      >
-        <Input.Password/>
-      </Form.Item>
-
-      <Form.Item
-        label="totp"
-        name="totp"
-        initialValue={""}
-      >
-        <Input/>
-      </Form.Item>
-    </>
   }
 
   function genScriptFormProperties() {
@@ -400,7 +383,7 @@ const Session: React.FC = () => {
 
       <Form.Item
         label="python脚本文件路径"
-        name="path"
+        name="scriptPath"
         initialValue={""}
         rules={[{required: true, message: '请输入python脚本文件路径!'}]}
       >
@@ -408,6 +391,7 @@ const Session: React.FC = () => {
       </Form.Item>
     </>
   }
+
 
   return <>
     <div style={{
@@ -428,7 +412,6 @@ const Session: React.FC = () => {
           blockNode
           autoExpandParent={true}
           titleRender={titleRender}
-          onDragEnter={onDragEnter}
           onDrop={onDrop}
           treeData={treeData}
         />
@@ -464,50 +447,57 @@ const Session: React.FC = () => {
       closable={false}
       onOk={() => {
         editForm.submit();
-        setEditSessionModalVisiable(false);
       }}
       onCancel={() => {
         setEditSessionModalVisiable(false);
-        editForm.resetFields();
       }}
     >
       <Form
         form={editForm}
         onFinish={(formInfo) => {
           if (!modalNode.isLeaf) {
-            const data = [...treeData];
-            loop(data, modalNode.key, (item) => {
-              item.title = formInfo.title;
-              sessionConfInfoMap[modalNode.key].title = formInfo.title;
-              return true;
+            request(util.baseUrl + 'conf', {
+              method: 'POST',
+              body: JSON.stringify({
+                type: 'SessionConfig',
+                args: {
+                  type: 'renameDir',
+                  src: modalNode.key,
+                  dst: formInfo.title
+                }
+              }),
+            }).then(res => {
+              message[res.status](res.msg);
+              if (res.status == 'success') {
+                setRefreshTreeData(e => e + 1);
+                setEditSessionModalVisiable(false);
+              }
             })
-            setTreeData(data);
-            saveSessionConfig();
             return;
           }
-          const node = sessionConfInfoMap[modalNode.key];
-          for (let key in formInfo) {
-            if (key === 'key') {
-              continue;
+          request(util.baseUrl + 'conf', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'SessionConfig',
+              args: {
+                type: 'editSession',
+                src: modalNode.key,
+                sessionInfo: formInfo
+              }
+            }),
+          }).then(res => {
+            message[res.status](res.msg);
+            if (res.status == 'success') {
+              setRefreshTreeData(e => e + 1);
+              setEditSessionModalVisiable(false);
             }
-            node[key] = formInfo[key];
-          }
-          sessionConfInfoMap[modalNode.key] = node;
-          localStorage.setItem(SESSION_CONF_INFO_MAP, JSON.stringify(sessionConfInfoMap));
+          })
         }}
       >
         {
           <>
-            <Form.Item
-              label="key"
-              name="key"
-              initialValue={modalNode?.key}
-              rules={[{required: true}]}
-            >
-              <Input disabled={true}/>
-            </Form.Item>
             {
-              modalNode?.isLeaf ? genSessionFormProperties(modalNode) : <Form.Item
+              modalNode?.isLeaf ? genSessionFormProperties() : <Form.Item
                 label="文件夹名"
                 name="title"
                 initialValue={modalNode?.title}
@@ -534,27 +524,24 @@ const Session: React.FC = () => {
       <Form
         form={form}
         onFinish={(formInfo) => {
-          const data = [...treeData];
-          if (!modalNode.children) {
-            modalNode.children = [];
-          }
-
-          const dropKey = modalNode.key;
-          const uuid = getUUid();
-          loop(data, dropKey, (item) => {
-            item.children = item.children || [];
-            const newNode = {
-              title: formInfo.sessionName,
-              key: uuid,
-              isLeaf: true
-            };
-            item.children.push(newNode);
-            sessionConfInfoMap[uuid] = formInfo;
-            saveSessionConfig();
-            return true;
-          });
-          setTreeData(data);
-          setAddSessionModalVisiable(false);
+          request(util.baseUrl + 'conf', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'SessionConfig',
+              args: {
+                type: 'addFile',
+                dir: modalNode.key,
+                fileName: formInfo.sessionName,
+                content: JSON.stringify(formInfo)
+              }
+            }),
+          }).then(res => {
+            message[res.status](res.msg);
+            if (res.status == 'success') {
+              setRefreshTreeData(e => e + 1);
+              setAddSessionModalVisiable(false);
+            }
+          })
         }}
       >
         {genSessionFormProperties()}
@@ -572,10 +559,10 @@ const Session: React.FC = () => {
     >
       <ProList
         rowKey="name"
-        dataSource={scriptData.filter(item => item.title.name.indexOf(scriptSearchValue) > -1)}
+        dataSource={scriptData.filter(item => (!item.scriptOwner || item.scriptOwner == sessionIdMapFileName[activeKey]) && item.title.name.indexOf(scriptSearchValue) > -1)}
         metas={{
           title: {
-            render: (e) => {
+            render: (text, row) => {
               return <Button onClick={() => {
                 const sessionList = sessions.filter(session => session.key == activeKey);
                 if (sessionList.length != 1) {
@@ -584,12 +571,12 @@ const Session: React.FC = () => {
 
                 sessionIdRef[activeKey].send({
                   type: 'exec',
-                  path: e.path,
+                  path: row.scriptPath,
                   sessionId: activeKey,
                   xshConfId: sessionList[0].sessionConfId
                 })
               }
-              }>{e.name}</Button>
+              }>{text.name}</Button>
             }
           },
           actions: {
@@ -597,7 +584,11 @@ const Session: React.FC = () => {
               <a
                 key="link"
                 onClick={() => {
-                  editScriptForm.setFieldsValue(row.title);
+                  const fields = Object.assign(row, {name: row.title.name})
+                  if (!fields.scriptOwner) {
+                    fields.scriptOwner = "common";
+                  }
+                  editScriptForm.setFieldsValue(fields);
                   setEditScriptModalVisiable(true);
                 }}
               >
@@ -610,19 +601,25 @@ const Session: React.FC = () => {
               <a
                 key="view"
                 onClick={() => {
-                  const name = row.title.name;
-                  const data = [...scriptData];
-                  for (let i = 0; i < data.length; i++) {
-                    if (data[i].title.name === name) {
-                      data.splice(i, 1);
-                      setScriptConf(data);
-                      return;
+                  request(util.baseUrl + 'conf', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      type: 'ScriptConfig',
+                      args: {
+                        type: 'deleteFile',
+                        path: row.file
+                      }
+                    }),
+                  }).then(res => {
+                    message[res.status](res.msg);
+                    if (res.status == 'success') {
+                      setRefreshScriptData(e => e + 1);
                     }
-                  }
+                  })
                 }}
               >
                 <FormattedMessage
-                  key="loginWith"
+                  key="pages.session.delete"
                   id="pages.session.delete"
                   defaultMessage="删除"
                 />
@@ -676,19 +673,61 @@ const Session: React.FC = () => {
       <Form
         form={addScriptForm}
         onFinish={(formInfo) => {
-          const data = [...scriptData];
-          data.push({
-            title: {
-              key: getUUid(),
-              name: formInfo.name,
-              path: formInfo.path
+          if (formInfo.scriptOwner == 'common') {
+            formInfo.scriptOwner = "";
+          } else {
+            formInfo.scriptOwner = sessionIdMapFileName[activeKey];
+          }
+          request(util.baseUrl + 'conf',{
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'ScriptConfig',
+              args: {
+                type: 'addFile',
+                ...formInfo
+              }
+            }),
+          }).then(res => {
+            message[res.status](res.msg);
+            if (res.status == 'success') {
+              setAddScriptModalVisiable(false);
+              setRefreshScriptData(e => e + 1);
             }
           })
-          setScriptConf(data);
-          setAddScriptModalVisiable(false);
         }}
       >
         {genScriptFormProperties()}
+        <Form.Item
+          name="scriptOwner"
+          rules={[() => ({
+            validator(e, value) {
+              console.log(e);
+              if (value || value === "") {
+                return Promise.resolve();
+              }
+              return Promise.reject(new Error('请选择按钮类型!'));
+            },
+          })]}
+          label={<FormattedMessage
+            key="pages.session.type"
+            id="pages.session.type"
+            defaultMessage="类型"
+          />}>
+          <Radio.Group>
+            <Radio value="common">
+              <FormattedMessage
+                key="pages.session.common"
+                id="pages.session.common"
+                defaultMessage="公共"
+              /> </Radio>
+            <Radio value={activeKey}>
+              <FormattedMessage
+                key="pages.session.currentSession"
+                id="pages.session.currentSession"
+                defaultMessage="当前会话"
+              /> </Radio>
+          </Radio.Group>
+        </Form.Item>
       </Form>
     </Modal>
 
@@ -706,22 +745,26 @@ const Session: React.FC = () => {
       <Form
         form={editScriptForm}
         onFinish={(formInfo) => {
-          const data = [...scriptData];
-          for (let i = 0; i < data.length; i++) {
-            if (data[i].title.key === formInfo.key) {
-              data[i] = {
-                title: formInfo
-              };
-              setScriptConf(data);
+          request(util.baseUrl + 'conf',{
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'ScriptConfig',
+              args: {
+                type: 'editScript',
+                ...formInfo
+              }
+            }),
+          }).then(res => {
+            message[res.status](res.msg);
+            if (res.status == 'success') {
               setEditScriptModalVisiable(false);
-              return;
+              setRefreshScriptData(e => e + 1);
             }
-          }
+          })
         }}
       >
         <Form.Item
-          name="key"
-          initialValue={""}
+          name="file"
           style={{display: 'none'}}
         >
           <Input/>

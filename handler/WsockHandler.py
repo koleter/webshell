@@ -106,13 +106,14 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
             session_id = msg.get('sessionId')
             xsh_conf_id = msg.get('xshConfId')
 
-            sc = SessionContext(self, xsh_conf_id, session_id)
+            sc = SessionContext(worker, xsh_conf_id, session_id)
             try:
                 module = imp.load_source(path, path)
                 module.Main(sc)
                 worker.handler.write_message({
                     'type': 'message',
-                    'status': 'ok'
+                    'status': 'success',
+                    'content': 'execute script success'
                 })
             except Exception as e:
                 worker.handler.write_message({
@@ -122,9 +123,9 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 })
 
     def on_close(self):
-        logging.info('Disconnected from {}:{}'.format(*self.src_addr))
+        print('Disconnected from {}:{}'.format(*self.src_addr))
         if not self.close_reason:
-            self.close_reason = 'client disconnected'
+            print(self.close_reason)
 
         worker = self.worker_ref if self.worker_ref else None
         if worker:

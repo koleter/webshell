@@ -1,5 +1,11 @@
 import ipaddress
 import re
+try:
+    import secrets
+except ImportError:
+    secrets = None
+
+from uuid import uuid4
 
 try:
     from types import UnicodeType
@@ -182,6 +188,9 @@ def reset_font(s):
     # s = s.split("\x07")[-3]
     return ansi_escape.sub('', s)
 
+
+def gen_id():
+    return secrets.token_urlsafe(nbytes=32) if secrets else uuid4().hex
 
 if __name__ == '__main__':
     text = '/\r\n\x1b[30;42m[ID ] IP               Port   Hostname              Region          \x1b[0m\r\n\x1b[1;32mOpt or ID>:\x1b[0m'

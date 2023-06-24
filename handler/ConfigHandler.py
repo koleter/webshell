@@ -1,32 +1,34 @@
-import imp
 import json
 import os
 
 import tornado.web
 from handler.MixinHandler import MixinHandler
+from handler.pojo.ScriptConfig import ScriptConfig
+from handler.pojo.SessionConfig import SessionConfig
 from settings import base_dir
 
 
-conf_dir_path = os.path.join(base_dir, 'conf')
-xsh_dir_path = os.path.join(base_dir, 'xsh')
+conf_dir_path = os.path.join(base_dir, 'config')
+xsh_dir_path = os.path.join(conf_dir_path, 'xsh')
 script_dir_path = os.path.join(conf_dir_path, 'script')
-common_script_dir_path = os.path.join(script_dir_path, 'common')
 
+handler_map = {
+    'SessionConfig': SessionConfig(xsh_dir_path),
+    'ScriptConfig': ScriptConfig(script_dir_path)
+}
 
 class ConfigHandler(MixinHandler, tornado.web.RequestHandler):
     def initialize(self, loop):
         super(ConfigHandler, self).initialize(loop)
         self.script = None
 
+    def get(self):
+        type = self.get_argument('type')
+        self.write(json.dumps(handler_map.get(type).get()))
 
     def post(self):
-        try:
-            data = json.loads(self.request.body)
-            module = imp.load_source("main_module", data.path)
-            module.Main()
-        except Exception as e:
-            self.write({
-                'status': 'error',
-                'msg': e
-            })
+        data = json.loads(self.request.body)
+        type = data['type']
+        args = data['args']
+        self.write(json.dumps(handler_map.get(type).post(args)))
 
