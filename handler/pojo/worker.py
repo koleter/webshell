@@ -118,9 +118,6 @@ class Worker(object):
                 return
 
             val = str(data, 'utf-8')
-            if self.debug:
-                with open("origin.txt", 'a+') as f:
-                    f.write(str(data)+'\n')
             try:
                 res = {
                     'val': val,
@@ -130,9 +127,6 @@ class Worker(object):
             except tornado.websocket.WebSocketClosedError:
                 self.close(reason='websocket closed')
             handler_str = reset_font(val)
-            if self.debug:
-                with open("handle.txt", 'a+') as f:
-                    f.write(str(handler_str))
             return str(handler_str)
 
 

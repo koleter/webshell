@@ -43,3 +43,6 @@ def Main(ctx):
     ctx.send('pwd\r')
 ```
 该脚本在运行时会向当前的会话发送pwd命令
+
+### start
+运行main.py,浏览器打开http://localhost:8888
