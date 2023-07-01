@@ -46,3 +46,7 @@ def Main(ctx):
 
 ### start
 运行main.py,浏览器打开http://localhost:8888
+
+### Operation
+ctrl + insert: 复制
+shift + insert: 粘贴
