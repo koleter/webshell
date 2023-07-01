@@ -16,7 +16,7 @@ from tornado.ioloop import IOLoop
 from tornado.iostream import _ERRNO_CONNRESET
 from tornado.util import errno_from_exception
 from handler.const import BUF_SIZE
-
+from tornado import gen
 
 workers = {}  # {id: worker}
 
@@ -107,10 +107,7 @@ class Worker(object):
 
         data = b""
         try:
-            while not self.chan.recv_ready():
-                time.sleep(0.1)
-            while self.chan.recv_ready():
-                data += self.chan.recv(BUF_SIZE)
+            data += self.chan.recv(BUF_SIZE)
         except (OSError, IOError) as e:
             logging.error(e)
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
@@ -137,12 +134,6 @@ class Worker(object):
                 with open("handle.txt", 'a+') as f:
                     f.write(str(handler_str))
             return str(handler_str)
-
-
-    def on_exec_command(self, command):
-        stdin, stdout, strerr =  self.ssh.exec_command(command)
-        result = (str(stdout.read(), encoding='utf-8'))
-        return result
 
 
     def on_write(self):

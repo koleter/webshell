@@ -2,7 +2,7 @@ import imp
 import json
 import logging
 import struct
-import time
+import traceback
 import paramiko
 import tornado.web
 
@@ -11,7 +11,7 @@ from tornado.ioloop import IOLoop
 from exception.InvalidValueError import InvalidValueError
 from handler.MixinHandler import MixinHandler
 from handler.const import callback_map
-from handler.pojo.session_context import SessionContext
+from handler.pojo.SessionContext import SessionContext
 from handler.pojo.worker import workers, clear_worker
 from utils import (
     UnicodeType
@@ -28,6 +28,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
     def initialize(self, loop):
         super(WsockHandler, self).initialize(loop)
         self.worker_ref = None
+
 
     def open(self):
         if not workers:
@@ -105,15 +106,28 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                     'status': 'success',
                     'content': 'execute script success'
                 })
-            except Exception as e:
+            except FileNotFoundError as e:
                 worker.handler.write_message({
                     'type': 'message',
                     'status': 'error',
-                    "msg": e
+                    "content": 'No such file: {}'.format(path)
+                })
+            except Exception as e:
+                traceback.print_exc()
+                worker.handler.write_message({
+                    'type': 'message',
+                    'status': 'error',
+                    "content": str(e)
                 })
         elif type == 'callback':
             requestId = msg.get('requestId')
-            callback_map[requestId](msg.get('args'))
+            try:
+                callback_map[requestId](msg.get('args'))
+            except Exception as e:
+                traceback.print_exc()
+                pass
+            finally:
+                del callback_map[requestId]
 
 
     def on_close(self):

@@ -4,7 +4,7 @@ import {Terminal} from "xterm"
 import "xterm/css/xterm.css"
 import util, {sleep, msgMap, getUUid, showMessage} from "../../../util"
 import {Button, List, message} from 'antd';
-import {sessionIdRef} from "../index"
+import {sessionIdRef, sessionIdMapFileName} from "../index"
 import {request} from 'umi';
 
 const termOptions = {
@@ -113,7 +113,7 @@ const Xterminal: React.FC = (props) => {
     };
 
     term.onData(function (data) {
-      // console.log(`onData: ${id}`);
+      console.log(`onData: ${id}, data: ${data}`);
       sock.send(JSON.stringify({'data': data, 'type': 'data'}));
     });
 
@@ -136,7 +136,7 @@ const Xterminal: React.FC = (props) => {
         arr.push(request(util.baseUrl, {
           method: 'POST',
           body: JSON.stringify({
-            filePath: sessionConfIds[0]
+            filePath: sessionConfIds[i]
           }),
         }))
       }
@@ -149,7 +149,8 @@ const Xterminal: React.FC = (props) => {
         }
         const data = [...sessions];
         res.forEach(item => {
-          data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath});
+          sessionIdMapFileName[item.id] = item.filePath.substr(item.filePath.lastIndexOf('\\') + 1);
+          data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath, isConnected: true});
         })
         setSessions(data);
         callback && callback(res);
@@ -207,6 +208,19 @@ const Xterminal: React.FC = (props) => {
         // removeTabByKey(id);
         window.onresize = null;
         delete sessionIdRef[id];
+        delete sessionIdMapFileName[id];
+
+        setSessions(sessions => {
+          const data = [...sessions];
+          for (let i = 0; i < data.length; i++) {
+            if (data[i].key == id) {
+              data[i].isConnected = false;
+              break;
+            }
+          }
+          return data;
+        })
+        // console.log(`sessionIdRef, sessionIdMapFileName, `, sessionIdRef, sessionIdMapFileName)
       };
 
       sessionIdRef[id].sock.onmessage = function (msg) {

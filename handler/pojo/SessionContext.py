@@ -20,12 +20,13 @@ class SessionContext:
         '''
         Send data and receive execution results, but the results will be a little strange
         '''
-        return self.worker.on_recv(data)
+        result = self.worker.on_recv(data)
+        return result
 
     def create_new_session(self, conf_path_list=None, callback=None):
         '''
         create new session
-        conf_path_list: A list, indicating the path of the session configuration file, if conf_id_list is None
+        conf_path_list: A list, indicating the path of the session configuration file, self.xsh_conf_id means duplicate current session
         callback: Callback function, the parameter is the SessionContext instance object corresponding to the newly created session list
         '''
         def session_id_to_worker(session_infos):

@@ -14,7 +14,8 @@ const {Content, Sider} = Layout;
 type TargetKey = React.MouseEvent | React.KeyboardEvent | string;
 let sessionRootKey = "";
 
-const sessionIdMapFileName = {};
+// 记录sessionId对应的文件名,这个用来过滤session可用的脚本
+export const sessionIdMapFileName = {};
 
 function genSessionFormProperties() {
   return <>
@@ -112,6 +113,7 @@ const Session: React.FC = () => {
   const [refreshTreeData, setRefreshTreeData] = useState(0);
   const [refreshScriptData, setRefreshScriptData] = useState(0);
   const [scriptData, setScriptData] = useState([]);
+
 
   useEffect(() => {
     request(util.baseUrl + 'conf', {
@@ -346,7 +348,7 @@ const Session: React.FC = () => {
       }
       sessionIdMapFileName[res.id] = filePath.substr(filePath.lastIndexOf('\\') + 1);
       const data = [...sessions];
-      data.push({label: title, key: res.id, sessionConfId: filePath});
+      data.push({label: title, key: res.id, sessionConfId: filePath, isConnected: true});
       setSessions(data);
       setActiveKey(res.id);
       callback && callback(res.id);
@@ -418,7 +420,23 @@ const Session: React.FC = () => {
           type="editable-card"
           activeKey={activeKey}
           hideAdd
-          items={sessions}
+          items={sessions.map(item => {
+            return {
+              label: (
+                <span>
+                  {item.label}
+                  <div style={{
+                    display: 'inline-block',
+                    backgroundColor: item.isConnected ? 'green' : 'red',
+                    borderRadius: '50%',
+                    width: '1em',
+                    height: '1em'
+                  }}></div>
+                </span>
+              ),
+              key: item.key
+            }
+          })}
           style={{marginBottom: 0}}
           onEdit={onEdit}
           onChange={onChange}/>
@@ -505,14 +523,14 @@ const Session: React.FC = () => {
                   </Form.Item>
                   {genSessionFormProperties()}
                 </>
-                 : <Form.Item
-                label="文件夹名"
-                name="title"
-                initialValue={modalNode?.title}
-                rules={[{required: true, message: '请输入文件夹名!'}]}
-              >
-                <Input/>
-              </Form.Item>
+                : <Form.Item
+                  label="文件夹名"
+                  name="title"
+                  initialValue={modalNode?.title}
+                  rules={[{required: true, message: '请输入文件夹名!'}]}
+                >
+                  <Input/>
+                </Form.Item>
             }
           </>
         }
@@ -686,7 +704,7 @@ const Session: React.FC = () => {
           } else {
             formInfo.scriptOwner = sessionIdMapFileName[activeKey];
           }
-          request(util.baseUrl + 'conf',{
+          request(util.baseUrl + 'conf', {
             method: 'POST',
             body: JSON.stringify({
               type: 'ScriptConfig',
@@ -753,7 +771,7 @@ const Session: React.FC = () => {
       <Form
         form={editScriptForm}
         onFinish={(formInfo) => {
-          request(util.baseUrl + 'conf',{
+          request(util.baseUrl + 'conf', {
             method: 'POST',
             body: JSON.stringify({
               type: 'ScriptConfig',
