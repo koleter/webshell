@@ -54,6 +54,13 @@ def Main(ctx):
 该脚本相当于复制了当前会话3次,并在新的会话中分别执行了"ls","pwd"与"ls /"三条命令,其中如果某个会
 话执行的命令的返回结果中有dev这个字符串,那么那个会话再执行一次"pwd" 命令
 
+如果要打开一个其他的会话,可以在ctx.create_new_session的第一个函数中传入这个会话的配置文件的id,该id
+可以通过编辑的方式看到
+
+![edit.jpg](preview%2Fedit.jpg)
+
+![get_session_conf_key.jpg](preview%2Fget_session_conf_key.jpg)
+
 
 ### start
 运行main.py,浏览器打开http://localhost:8888
