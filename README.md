@@ -39,10 +39,21 @@ python脚本的入口为Main函数,接受一个形参,该参数为handler.pojo.s
 For example:
 
 ```python
+def callback(ctxs):
+    cmds = ['ls\r', 'pwd\r', 'ls /\r']
+    for i in range(len(ctxs)):
+        ret = ctxs[i].send_recv(cmds[i])
+        print(ret)
+        if "dev" in ret:
+            ctxs[i].send('pwd\r')
+        
+
 def Main(ctx):
-    ctx.send('pwd\r')
+    ctx.create_new_session([ctx.xsh_conf_id]*3, callback)
 ```
-该脚本在运行时会向当前的会话发送pwd命令
+该脚本相当于复制了当前会话3次,并在新的会话中分别执行了"ls","pwd"与"ls /"三条命令,其中如果某个会
+话执行的命令的返回结果中有dev这个字符串,那么那个会话再执行一次"pwd" 命令
+
 
 ### start
 运行main.py,浏览器打开http://localhost:8888

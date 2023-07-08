@@ -60,13 +60,13 @@ const Xterminal: React.FC = (props) => {
       status: state,
       sock: sock,
       term: term,
-      send: function(msg: object) {
+      send: function (msg: object) {
         sock.send(JSON.stringify(msg));
       },
-      sendData: function(data: string) {
+      sendData: function (data: string) {
         sock.send(JSON.stringify({'data': data + '\r', 'type': 'data'}));
       },
-      sendRecv: async function(data: string, maxRetryCount=10, retryTime=1000) {
+      sendRecv: async function (data: string, maxRetryCount = 10, retryTime = 1000) {
         const uid = genUUid();
         console.log(`uuid: ${uid}`)
 
@@ -147,13 +147,18 @@ const Xterminal: React.FC = (props) => {
             return;
           }
         }
-        const data = [...sessions];
-        res.forEach(item => {
-          sessionIdMapFileName[item.id] = item.filePath.substr(item.filePath.lastIndexOf('\\') + 1);
-          data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath, isConnected: true});
-        })
-        setSessions(data);
-        callback && callback(res);
+
+        setSessions((sessions) => {
+          const data = [...sessions];
+          res.forEach(item => {
+            sessionIdMapFileName[item.id] = item.filePath.substr(item.filePath.lastIndexOf('\\') + 1);
+            data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath, isConnected: true});
+          })
+          setTimeout(() => {
+            callback && callback(res);
+          }, 1000);
+          return data;
+        });
       })
     }
   };

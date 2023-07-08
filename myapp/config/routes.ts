@@ -11,6 +11,10 @@
     redirect: '/session',
   },
   {
+    path: '/static/session',
+    redirect: '/session',
+  },
+  {
     component: './404',
   },
 ];
