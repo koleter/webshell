@@ -17,7 +17,7 @@ define('ssladdress', default='', help='SSL listen address')
 define('sslport', type=int, default=4433,  help='SSL listen port')
 define('certfile', default='', help='SSL certificate file')
 define('keyfile', default='', help='SSL private key file')
-define('debug', type=bool, default=True, help='Debug mode')
+define('debug', type=bool, default=False, help='Debug mode')
 define('policy', default='warning',
        help='Missing host key policy, reject|autoadd|warning')
 define('hostfile', default='', help='User defined host keys file')
@@ -141,12 +141,7 @@ def get_trusted_downstream(tdstream):
 
 def get_origin_setting(options):
     if options.origin == '*':
-        if not options.debug:
-            raise ValueError(
-                'Wildcard origin policy is only allowed in debug mode.'
-            )
-        else:
-            return '*'
+        return '*'
 
     origin = options.origin.lower()
     if origin in ['same', 'primary']:
