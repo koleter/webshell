@@ -178,8 +178,11 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
                 filename = session_conf['privatekey']
                 privatekey = ''
                 if filename.strip() != '':
-                    with open(filename, 'r') as f:
-                        privatekey = f.read()
+                    try:
+                        with open(filename, 'r') as f:
+                            privatekey = f.read()
+                    except FileNotFoundError as e:
+                        raise tornado.web.HTTPError(400, 'No such privatekey file: {}'.format(filename))
                 passphrase = session_conf['passphrase']
                 totp = session_conf['totp']
 

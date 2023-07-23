@@ -148,12 +148,28 @@ const Xterminal: React.FC = (props) => {
           }
         }
 
+        let hasError = false;
+        for (let i = 0; i < res.length; i++) {
+          const item = res[i];
+          if (!item.filePath) {
+            showMessage({
+              status: 'error',
+              content: item.status
+            });
+            hasError = true;
+          }
+        }
+        if (hasError) {
+          return;
+        }
         setSessions((sessions) => {
           const data = [...sessions];
-          res.forEach(item => {
+          for (let i = 0; i < res.length; i++) {
+            const item = res[i];
             sessionIdMapFileName[item.id] = item.filePath.substr(item.filePath.lastIndexOf('\\') + 1);
             data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath, isConnected: true});
-          })
+          }
+
           setTimeout(() => {
             callback && callback(res);
           }, 1000);

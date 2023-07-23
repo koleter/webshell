@@ -5,6 +5,9 @@ import defaultSettings from '../config/defaultSettings';
 const { pwa } = defaultSettings;
 const isHttps = document.location.protocol === 'https:';
 
+window.onerror = function(message, source, lineNum, colNum, error) {
+  console.log(message, source, lineNum, colNum, error);
+}
 const clearCache = () => {
   // remove all caches
   if (window.caches) {
