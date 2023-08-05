@@ -1,4 +1,7 @@
 import logging
+import traceback
+import weakref
+
 import paramiko
 import threading
 import time
@@ -11,14 +14,18 @@ except ImportError:
     secrets = None
 import tornado.websocket
 
-from uuid import uuid4
 from tornado.ioloop import IOLoop
 from tornado.iostream import _ERRNO_CONNRESET
 from tornado.util import errno_from_exception
 from handler.const import BUF_SIZE
-from tornado import gen
 
-workers = {}  # {id: worker}
+
+workers = weakref.WeakValueDictionary()  # {id: worker}
+
+# logger = logging.getLogger(__name__)
+# console_fmt = "%(name)s--->%(levelname)s--->%(asctime)s--->%(message)s--->%(filename)s:%(lineno)d"
+#
+# logging.basicConfig(level="INFO", format=console_fmt)
 
 
 def clear_worker(worker):
@@ -93,6 +100,7 @@ class Worker(object):
 
 
     def on_recv(self, data, sleep=0.5):
+        # time.sleep(5)
         logging.debug('worker {} on read'.format(self.id))
         newline = data[-1]
         data = data[:-1]
@@ -109,7 +117,7 @@ class Worker(object):
         try:
             data += self.chan.recv(BUF_SIZE)
         except (OSError, IOError) as e:
-            logging.error(e)
+            traceback.print_exc()
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
                 self.close(reason='chan error on reading')
         else:

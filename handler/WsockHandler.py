@@ -2,6 +2,7 @@ import imp
 import json
 import logging
 import struct
+import time
 import traceback
 import paramiko
 import tornado.web
@@ -77,6 +78,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 except (TypeError, struct.error, paramiko.SSHException):
                     pass
         elif type == 'data':
+            time.sleep(5)
             data = msg.get('data')
             if data and isinstance(data, UnicodeType):
                 worker.data_to_dst.append(data)

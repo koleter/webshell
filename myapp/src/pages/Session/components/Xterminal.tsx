@@ -3,7 +3,6 @@ import React from "react";
 import {Terminal} from "xterm"
 import "xterm/css/xterm.css"
 import util, {sleep, msgMap, getUUid, showMessage} from "../../../util"
-import {Button, List, message} from 'antd';
 import {sessionIdRef, sessionIdMapFileName} from "../index"
 import {request} from 'umi';
 
