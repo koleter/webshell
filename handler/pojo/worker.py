@@ -172,7 +172,7 @@ class Worker(object):
         '''
         Pop-up window to get user input
         msg: prompt information
-        callback: a callback function, the result of user input will be a parameter of callback
+        callback: a callback function, the result of user input will be a parameter of callback, it has two args, callback(worker, args)
         '''
         message = {
             'arg': msg,
@@ -202,16 +202,16 @@ class Worker(object):
         if callback:
             req_id = str(uuid.uuid1())
             message['requestId'] = req_id
-            callback_map[req_id] = self._init_callback_context_list(callback)
+            callback_map[req_id] = self._init_callback_worker_list(callback)
         self.handler.write_message(message)
 
-    def _init_callback_context(self, callback):
-        def warp(worker):
-            callback(worker)
+    def _init_callback_worker(self, callback):
+        def warp(worker, args):
+            callback(worker, args)
 
         return warp
 
-    def _init_callback_context_list(self, callback):
+    def _init_callback_worker_list(self, callback):
         def warp(session_infos):
             worker_list = []
             for session_info in session_infos:

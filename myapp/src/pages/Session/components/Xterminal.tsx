@@ -205,11 +205,12 @@ const Xterminal: React.FC = (props) => {
           }
           break;
         case 'eval':
-          const result = eval(`${res.method}(${res.msg})`);
+          const result = eval(`${res.method}('${res.arg}')`);
           if (res.requestId) {
             sessionIdRef[id].send({
               type: 'callback',
               requestId: res.requestId,
+              withWorker: true,
               args: result
             })
           }
