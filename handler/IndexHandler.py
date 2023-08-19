@@ -207,6 +207,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
             logging.error(traceback.format_exc())
             self.result.update(status=str(exc))
         else:
+            worker.xsh_conf_id = data['filePath']
             workers[worker.id] = worker
             self.loop.call_later(options.delay, recycle_worker, worker)
             self.result.update(id=worker.id, encoding=worker.encoding)

@@ -201,7 +201,17 @@ const Xterminal: React.FC = (props) => {
               })
             })
           } else {
-            methodMap[res.method](JSON.parse(res.args));
+            methodMap[res.method](res.args);
+          }
+          break;
+        case 'eval':
+          const result = eval(`${res.method}(${res.msg})`);
+          if (res.requestId) {
+            sessionIdRef[id].send({
+              type: 'callback',
+              requestId: res.requestId,
+              args: result
+            })
           }
           break;
         case 'response':

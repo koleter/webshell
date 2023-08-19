@@ -1,18 +1,15 @@
 import imp
 import json
-import logging
 import struct
-import time
 import traceback
+
 import paramiko
 import tornado.web
-
 from tornado.ioloop import IOLoop
 
 from exception.InvalidValueError import InvalidValueError
 from handler.MixinHandler import MixinHandler
 from handler.const import callback_map
-from handler.pojo.SessionContext import SessionContext
 from handler.pojo.worker import workers, clear_worker
 from utils import (
     UnicodeType
@@ -29,7 +26,6 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
     def initialize(self, loop):
         super(WsockHandler, self).initialize(loop)
         self.worker_ref = None
-
 
     def open(self):
         if not workers:
@@ -78,11 +74,9 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 except (TypeError, struct.error, paramiko.SSHException):
                     pass
         elif type == 'data':
-            time.sleep(5)
             data = msg.get('data')
             if data and isinstance(data, UnicodeType):
-                worker.data_to_dst.append(data)
-                worker.on_write()
+                worker.send(data)
         elif type == 'sendRecv':
             data = msg.get('data')
             requestId = msg.get('requestId')
@@ -96,13 +90,10 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
             }, binary=False)
         elif type == 'exec':
             path = msg.get('path')
-            session_id = msg.get('sessionId')
-            xsh_conf_id = msg.get('xshConfId')
 
-            sc = SessionContext(worker, xsh_conf_id, session_id)
             try:
                 module = imp.load_source(path, path)
-                module.Main(sc)
+                module.Main(worker)
                 worker.handler.write_message({
                     'type': 'message',
                     'status': 'success',
@@ -130,7 +121,6 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 pass
             finally:
                 del callback_map[requestId]
-
 
     def on_close(self):
         if not self.close_reason:
