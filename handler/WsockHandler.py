@@ -119,7 +119,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
             with_context = msg.get('withContext')
             try:
                 if with_context:
-                    callback_map[requestId](worker, msg.get('args'))
+                    callback_map[requestId](SessionContext(worker), msg.get('args'))
                 else:
                     callback_map[requestId](msg.get('args'))
             except Exception as e:
