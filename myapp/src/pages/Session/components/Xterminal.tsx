@@ -210,7 +210,7 @@ const Xterminal: React.FC = (props) => {
             sessionIdRef[id].send({
               type: 'callback',
               requestId: res.requestId,
-              withWorker: true,
+              withContext: true,
               args: result
             })
           }

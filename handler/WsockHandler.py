@@ -10,6 +10,7 @@ from tornado.ioloop import IOLoop
 from exception.InvalidValueError import InvalidValueError
 from handler.MixinHandler import MixinHandler
 from handler.const import callback_map
+from handler.pojo.SessionContext import SessionContext
 from handler.pojo.worker import workers, clear_worker
 from utils import (
     UnicodeType
@@ -93,7 +94,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
 
             try:
                 module = imp.load_source(path, path)
-                module.Main(worker)
+                module.Main(SessionContext(worker))
                 worker.handler.write_message({
                     'type': 'message',
                     'status': 'success',
@@ -114,9 +115,9 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 })
         elif type == 'callback':
             requestId = msg.get('requestId')
-            with_worker = msg.get('withWorker')
+            with_context = msg.get('withContext')
             try:
-                if with_worker:
+                if with_context:
                     callback_map[requestId](worker, msg.get('args'))
                 else:
                     callback_map[requestId](msg.get('args'))
@@ -128,7 +129,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         if not self.close_reason:
-            print(self.close_reason)
+            print('close_reason is {}'.format(self.close_reason))
         worker = self.worker_ref if self.worker_ref else None
         if worker:
             clear_worker(worker)

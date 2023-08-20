@@ -8,6 +8,7 @@ import paramiko
 import threading
 import time
 
+from handler.pojo.SessionContext import SessionContext
 from utils import reset_font, gen_id
 
 try:
@@ -206,18 +207,17 @@ class Worker(object):
         self.handler.write_message(message)
 
     def _init_callback_worker(self, callback):
-        def warp(worker, args):
-            callback(worker, args)
+        def warp(ctx, args):
+            callback(ctx, args)
 
         return warp
 
     def _init_callback_worker_list(self, callback):
         def warp(session_infos):
-            worker_list = []
+            context_list = []
             for session_info in session_infos:
-                worker_list.append(
-                    workers[session_info['id']])
-            callback(worker_list)
+                context_list.append(SessionContext(workers[session_info['id']]))
+            callback(context_list)
 
         return warp
 
