@@ -38,7 +38,7 @@ def recycle_worker(worker):
     if worker.handler:
         return
     logging.warning('Recycling worker {}'.format(worker.id))
-    worker._close(reason='worker recycled')
+    worker.close(reason='worker recycled')
 
 
 class Worker(object):
@@ -63,7 +63,7 @@ class Worker(object):
         if events & IOLoop.WRITE:
             self._on_write()
         if events & IOLoop.ERROR:
-            self._close(reason='error event occurred')
+            self.close(reason='error event occurred')
 
 
     def set_handler(self, handler):
@@ -84,10 +84,10 @@ class Worker(object):
         except (OSError, IOError) as e:
             logging.error(e)
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
-                self._close(reason='chan error on reading')
+                self.close(reason='chan error on reading')
         else:
             if not data:
-                self._close(reason='chan closed')
+                self.close(reason='chan closed')
                 return
 
             val = str(data, 'utf-8')
@@ -98,7 +98,7 @@ class Worker(object):
                 }
                 self.handler.write_message(res, binary=False)
             except tornado.websocket.WebSocketClosedError:
-                self._close(reason='websocket closed')
+                self.close(reason='websocket closed')
 
 
     def on_recv(self, data, sleep=0.5):
@@ -120,10 +120,10 @@ class Worker(object):
         except (OSError, IOError) as e:
             traceback.print_exc()
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
-                self._close(reason='chan error on reading')
+                self.close(reason='chan error on reading')
         else:
             if not data:
-                self._close(reason='chan closed')
+                self.close(reason='chan closed')
                 return
 
             val = str(data, 'utf-8')
@@ -134,7 +134,7 @@ class Worker(object):
                 }
                 self.handler.write_message(res, binary=False)
             except tornado.websocket.WebSocketClosedError:
-                self._close(reason='websocket closed')
+                self.close(reason='websocket closed')
             handler_str = reset_font(val)
             return str(handler_str)
 
@@ -156,7 +156,7 @@ class Worker(object):
         except (OSError, IOError) as e:
             logging.error(e)
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
-                self._close(reason='chan error on writing')
+                self.close(reason='chan error on writing')
             else:
                 self.update_handler(IOLoop.WRITE)
         else:
@@ -221,7 +221,7 @@ class Worker(object):
 
         return warp
 
-    def _close(self, reason=None):
+    def close(self, reason=None):
         if self.closed:
             return
         self.closed = True
@@ -231,8 +231,8 @@ class Worker(object):
         )
         if self.handler:
             self.loop.remove_handler(self.fd)
-            self.handler._close(reason=reason)
+            self.handler.close(reason=reason)
         self.chan.close()
-        self.ssh._close()
+        self.ssh.close()
         logging.info('Connection to {}:{} lost'.format(*self.dst_addr))
 

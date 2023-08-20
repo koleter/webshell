@@ -230,6 +230,7 @@ const Session: React.FC = () => {
 
   const genTreeNodeMenu = (node) => {
     const items = [];
+    // 非session节点
     if (!node.isLeaf) {
       items.push({
         label: (
@@ -266,8 +267,33 @@ const Session: React.FC = () => {
         ),
         key: 'addSession',
       });
+    } else {
+      // session节点可以复制某个session配置
+      items.push({
+        label: (
+          <span onClick={() => {
+            request(util.baseUrl + 'conf', {
+              method: 'POST',
+              body: JSON.stringify({
+                type: 'SessionConfig',
+                args: {
+                  type: 'duplicateSession',
+                  path: node.key
+                }
+              }),
+            }).then(res => {
+              message[res.status](res.msg);
+              if (res.status == 'success') {
+                setRefreshTreeData(e => e + 1)
+              }
+            })
+          }}>复制</span>
+        ),
+        key: 'duplicateSession',
+      });
     }
 
+    // 非root节点
     if (sessionRootKey != node.key) {
       items.push({
         label: (
