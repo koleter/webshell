@@ -55,11 +55,11 @@ class SessionConfig(BaseConfig):
         elif type == 'duplicateSession':
             origin_file = os.path.join(self.path, args['path'])
             with open(origin_file, 'r') as f:
-                data = f.read()
-            new_file_data = re.sub('"sessionName":"(.*?)"', r'"sessionName":"\1 - 副本"', data, count=1)
+                data = json.loads(f.read())
+            data['sessionName'] += ' - 副本'
             new_file_path = os.path.join(os.path.dirname(origin_file), gen_id())
             with open(new_file_path, 'w') as f:
-                f.write(new_file_data)
+                f.write(json.dumps(data))
             return status_success('opration success')
 
         return super().post(args)
