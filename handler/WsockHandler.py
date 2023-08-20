@@ -1,5 +1,6 @@
 import imp
 import json
+import logging
 import struct
 import traceback
 
@@ -129,7 +130,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         if not self.close_reason:
-            print('close_reason is {}'.format(self.close_reason))
+            logging.info('close_reason is {}'.format(self.close_reason))
         worker = self.worker_ref if self.worker_ref else None
         if worker:
             clear_worker(worker)
