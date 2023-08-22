@@ -447,18 +447,50 @@ const Session: React.FC = () => {
           activeKey={activeKey}
           hideAdd
           items={sessions.map(item => {
+            function closeSessions(sessions) {
+              sessions.forEach(session => {
+                try {
+                  sessionIdRef[session.key].sock.close();
+                } catch (e) {
+                  console.error(e);
+                }
+              })
+            }
             return {
               label: (
-                <span>
-                  {item.label}
-                  <div style={{
-                    display: 'inline-block',
-                    backgroundColor: item.isConnected ? 'green' : 'red',
-                    borderRadius: '50%',
-                    width: '1em',
-                    height: '1em'
-                  }}></div>
-                </span>
+                <Dropdown menu={{
+                  items: [
+                  {
+                    label: (
+                      <span onClick={() => {
+                        setSessions(sessions.filter(session => session.key === item.key));
+                        closeSessions(sessions.filter(session => session.key !== item.key));
+                      }}>关闭其他选项卡</span>
+                    ),
+                    key: 'closeOtherTabs'
+                  },
+                  {
+                    label: (
+                      <span onClick={() => {
+                        closeSessions(sessions);
+                        setSessions([]);
+                      }}>关闭所有选项卡</span>
+                    ),
+                    key: 'closeAllTabs'
+                  }
+                ]}} trigger={['contextMenu']}>
+                  <span>
+                    {item.label}
+                    <div style={{
+                      display: 'inline-block',
+                      backgroundColor: item.isConnected ? 'green' : 'red',
+                      borderRadius: '50%',
+                      width: '1em',
+                      height: '1em'
+                    }}></div>
+                  </span>
+                </Dropdown>
+
               ),
               key: item.key
             }
