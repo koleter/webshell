@@ -450,6 +450,7 @@ const Session: React.FC = () => {
             function closeSessions(sessions) {
               sessions.forEach(session => {
                 try {
+                  // 必须要调用websocket的close方法,直接设置session会导致页面上的会话关闭但是ssh连接未断开
                   sessionIdRef[session.key].sock.close();
                 } catch (e) {
                   console.error(e);
@@ -669,9 +670,9 @@ const Session: React.FC = () => {
                 key="link"
                 onClick={() => {
                   const fields = Object.assign(row, {name: row.title.name})
-                  if (!fields.scriptOwner) {
-                    fields.scriptOwner = "common";
-                  }
+                  // if (!fields.scriptOwner) {
+                  //   fields.scriptOwner = "common";
+                  // }
                   editScriptForm.setFieldsValue(fields);
                   setEditScriptModalVisiable(true);
                 }}
