@@ -22,7 +22,7 @@ from tornado.iostream import _ERRNO_CONNRESET
 from tornado.util import errno_from_exception
 from handler.const import BUF_SIZE, callback_map
 
-workers = weakref.WeakValueDictionary()  # {id: worker}
+workers = {}  # {id: worker}
 
 # logger = logging.getLogger(__name__)
 # console_fmt = "%(name)s--->%(levelname)s--->%(asctime)s--->%(message)s--->%(filename)s:%(lineno)d"
@@ -60,15 +60,20 @@ class Worker(object):
 
     def __call__(self, fd, events):
         if events & IOLoop.READ:
+            logging.info("{} IOLoop.READ start".format(self.id))
             self._on_read()
+            logging.info("{} IOLoop.READ end".format(self.id))
         if events & IOLoop.WRITE:
+            logging.info("{} IOLoop.WRITE".format(self.id))
             self._on_write()
         if events & IOLoop.ERROR:
+            logging.info("{} IOLoop.ERROR".format(self.id))
             self.close(reason='error event occurred')
 
 
     def set_handler(self, handler):
         if not self.handler:
+            logging.info("{} set handler".format(self.id))
             self.handler = handler
 
     def update_handler(self, mode):
@@ -97,13 +102,15 @@ class Worker(object):
                     'val': val,
                     'type': 'data'
                 }
+                if not self.handler:
+                    logging.error("{}'s handler is None".format(self.id))
                 self.handler.write_message(res, binary=False)
             except tornado.websocket.WebSocketClosedError:
                 self.close(reason='websocket closed')
 
 
     def on_recv(self, data, sleep=0.5):
-        logging.debug('worker {} on read'.format(self.id))
+        logging.info('worker {} on read'.format(self.id))
         newline = data[-1]
         data = data[:-1]
         self.data_to_dst.append(data)

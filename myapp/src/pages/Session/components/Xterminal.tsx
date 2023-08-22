@@ -141,12 +141,14 @@ const Xterminal: React.FC = (props) => {
       }
       Promise.all(arr).then(res => {
         for (let i = 0; i < res.length; i++) {
-          if (res.status) {
-            showMessage(res);
+          if (res[i].status) {
+            showMessage(res[i]);
             return;
           }
         }
 
+        // 保存新创建的所有会话的id
+        const newSessionIds = [];
         let hasError = false;
         for (let i = 0; i < res.length; i++) {
           const item = res[i];
@@ -157,6 +159,7 @@ const Xterminal: React.FC = (props) => {
             });
             hasError = true;
           }
+          newSessionIds.push(item.id);
         }
         if (hasError) {
           return;
@@ -169,9 +172,18 @@ const Xterminal: React.FC = (props) => {
             data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath, isConnected: true});
           }
 
-          setTimeout(() => {
+          // 创建新会话需要等待所有会话的websocket与后端建立完毕
+          function checkAllSessionIsReady() {
+            for (let i = 0; i < newSessionIds.length; i++) {
+              if (!sessionIdRef[newSessionIds[i]]) {
+                setTimeout(checkAllSessionIsReady, 200);
+                return;
+              }
+            }
             callback && callback(res);
-          }, 1000);
+          }
+
+          setTimeout(checkAllSessionIsReady, 200);
           return data;
         });
       })

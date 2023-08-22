@@ -209,7 +209,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         else:
             worker.xsh_conf_id = data['filePath']
             workers[worker.id] = worker
-            self.loop.call_later(options.delay, recycle_worker, worker)
+            # self.loop.call_later(options.delay, recycle_worker, worker)
             self.result.update(id=worker.id, encoding=worker.encoding)
             self.result.update(sessionName=session_conf['sessionName'])
             self.result.update(filePath=data['filePath'])
