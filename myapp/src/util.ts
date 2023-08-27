@@ -10,6 +10,8 @@ export function sleep(time: number) {
 
 export const msgMap = {};
 
+export const sessionStatusMap = {};
+
 export function getUUid(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0,

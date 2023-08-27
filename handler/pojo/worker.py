@@ -188,12 +188,18 @@ class Worker(object):
             'method': 'prompt'
         }
         if callback:
-            if type(callback) != types.FunctionType:
-                raise Exception("callback must be a function")
-            req_id = str(uuid.uuid1())
-            message['requestId'] = req_id
-            callback_map[req_id] = callback
+            self.set_callback_message(callback, message)
         self.handler.write_message(message)
+
+    def set_callback_message(self, callback, message):
+        if type(callback) != types.FunctionType:
+            raise Exception("callback must be a function")
+        req_id = str(uuid.uuid1())
+        message['requestId'] = req_id
+        callback_map[req_id] = callback
+        def delete_callback():
+            callback_map.pop(req_id, None)
+        threading.Timer(30, delete_callback).start()
 
     def create_new_session(self, conf_path_list=None, callback=None):
         '''
@@ -208,9 +214,7 @@ class Worker(object):
             'method': 'createNewSession'
         }
         if callback:
-            req_id = str(uuid.uuid1())
-            message['requestId'] = req_id
-            callback_map[req_id] = self._init_callback_worker_list(callback)
+            self.set_callback_message(self._init_callback_worker_list(callback), message)
         self.handler.write_message(message)
 
     def _init_callback_worker(self, callback):

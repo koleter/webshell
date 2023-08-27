@@ -126,7 +126,7 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 traceback.print_exc()
                 pass
             finally:
-                del callback_map[requestId]
+                callback_map.pop(requestId, None)
 
     def on_close(self):
         if not self.close_reason:

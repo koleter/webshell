@@ -2,7 +2,8 @@ import {useEffect, useRef, useState} from "react";
 import React from "react";
 import {Terminal} from "xterm"
 import "xterm/css/xterm.css"
-import util, {sleep, msgMap, getUUid, showMessage} from "../../../util"
+import util, {sleep, msgMap, sessionStatusMap, showMessage} from "../../../util"
+import {DISCONNECTED, CONNECTING, CONNECTED} from "../../../const"
 import {sessionIdRef, sessionIdMapFileName} from "../index"
 import {request} from 'umi';
 
@@ -28,9 +29,6 @@ const Xterminal: React.FC = (props) => {
     const ws_url = util.baseUrl.split(/\?|#/, 1)[0].replace('http', 'ws'),
       join = (ws_url[ws_url.length - 1] === '/' ? '' : '/'),
       url = ws_url + join + 'ws?id=' + id,
-      DISCONNECTED = 0,
-      CONNECTING = 1,
-      CONNECTED = 2,
       url_opts_data = {
         command: ''
       },
@@ -40,23 +38,22 @@ const Xterminal: React.FC = (props) => {
     const term = new Terminal(termOptions);
 
     const sock = new window.WebSocket(url);
-    let state = CONNECTING;
+    sessionStatusMap[id] = CONNECTING;
 
     sock.onopen = function () {
       term.open(terminalRef.current as HTMLDivElement);
       term.focus();
-      state = CONNECTED;
       if (url_opts_data.command) {
         setTimeout(function () {
           sock.send(JSON.stringify({'data': url_opts_data.command + '\r', 'type': 'data'}));
         }, 500);
       }
       resize_terminal(term);
+      sessionStatusMap[id] = CONNECTED;
     };
 
     sessionIdRef[id] = {
       id: id,
-      status: state,
       sock: sock,
       term: term,
       send: function (msg: object) {
@@ -172,18 +169,25 @@ const Xterminal: React.FC = (props) => {
             data.push({label: item.sessionName, key: item.id, sessionConfId: item.filePath, isConnected: true});
           }
 
+          const interval = 200;
           // 创建新会话需要等待所有会话的websocket与后端建立完毕
-          function checkAllSessionIsReady() {
+          function checkAllSessionIsReady(time) {
+            // 最多等4秒,无法全部执行成功的话就不再执行回调
+            if (time > 4000) {
+              return;
+            }
             for (let i = 0; i < newSessionIds.length; i++) {
-              if (!sessionIdRef[newSessionIds[i]]) {
-                setTimeout(checkAllSessionIsReady, 200);
+              if (sessionStatusMap[newSessionIds[i]] !== CONNECTED) {
+                setTimeout(() => {
+                  checkAllSessionIsReady(time + interval);
+                }, interval);
                 return;
               }
             }
             callback && callback(res);
           }
 
-          setTimeout(checkAllSessionIsReady, 200);
+          checkAllSessionIsReady(0);
           return data;
         });
       })
