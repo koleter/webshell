@@ -249,13 +249,12 @@ const Xterminal: React.FC = (props) => {
         console.log(`sock: ${id} closed`, e);
         try {
           sessionIdRef[id].term.write("\nthis session is closed.....");
-        } catch (e) {
-
-        }
+        } catch (e) {}
         // removeTabByKey(id);
         window.onresize = null;
         delete sessionIdRef[id];
         delete sessionIdMapFileName[id];
+        delete sessionStatusMap[id];
 
         setSessions(sessions => {
           const data = [...sessions];
