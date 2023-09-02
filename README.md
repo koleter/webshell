@@ -30,20 +30,35 @@
 python脚本的入口为Main函数,接受一个形参,该参数为handler.pojo.SessionContext.SessionContext类的一个实例对象,
 可以认为是代表了当前会话的一个对象,可用的接口可以参考该类的定义
 
-For example:
+
+handler.pojo.SessionContext.SessionContext类中有两个函数需要回调函数,一个是用于接收用户输入的prompt,另一个是用来创建新会话的create_new_session函数,
+回调函数需要至少两个参数,第一个参数代表当前会话的上下文对象,第二个参数为回调的结果,其余的参数为客户自行传入的参数
 
 ```python
-def callback(ctxs):
-    cmds = ['pwd\r', 'ls /\r']
-    for i in range(len(ctxs)):
-        ret = ctxs[i].on_recv(cmds[i])
-        print(ret)
-        if "dev" in ret:
-            ctxs[i].send('pwd\r')
+def prompt_callback(ctx, result, my_arg):
+    print("自行传入的参数为: {}".format(my_arg))
+    if not result:
+        return
+    print(f'用户的输入为{result}')
+    ctx.send(result + '\r')
 
 
 def Main(ctx):
-    ctx.create_new_session([ctx.get_xsh_conf_id()]*2, callback)
+    ctx.prompt("请输入要执行的命令:", prompt_callback, 4)
+```
+
+```python
+def callback(ctx, created_ctxs, a, b):
+    print("自定义参数相加结果: {}".format(a + b))
+    cmds = ['pwd\r', 'ls /\r', 'ls\r']
+    for i in range(len(created_ctxs)):
+        ret = created_ctxs[i].on_recv(cmds[i % len(cmds)])
+        if "dev" in ret:
+            created_ctxs[i].send('pwd\r')
+
+
+def Main(ctx):
+    ctx.create_new_session([ctx.get_xsh_conf_id()]*2, callback, 3, 4)
 ```
 该脚本相当于复制了当前会话2次,并在新的会话中分别执行了"pwd"与"ls /"命令,其中如果某个会话执行的命令的返回结果中有dev这个字符串,那么那个会话再执行一次"pwd" 命令
 
@@ -52,7 +67,6 @@ def Main(ctx):
 ![edit.jpg](preview%2Fedit.jpg)
 
 ![get_session_conf_key.jpg](preview%2Fget_session_conf_key.jpg)
-
 
 ## start
 运行main.py,浏览器打开http://localhost:8888

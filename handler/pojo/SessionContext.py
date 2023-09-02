@@ -14,7 +14,7 @@ class SessionContext:
         '''
         Pop-up window to get user input
         msg: prompt information
-        callback: a callback function, it has at least two parameters, callback(ctx, user_input)
+        callback: a callback function, it has at least two parameters, callback(ctx, user_input, *args)
         args: The User-Defined parameters of callback
         '''
         return self._worker.prompt(msg, callback, args)
