@@ -176,10 +176,11 @@ class Worker(object):
             else:
                 self.update_handler(IOLoop.READ)
 
-    def prompt(self, msg, callback):
+    def prompt(self, msg, callback, args):
         '''
         Pop-up window to get user input
         msg: prompt information
+        args: The parameters of callback
         callback: a callback function, the result of user input will be a parameter of callback, it has two args, callback(worker, args)
         '''
         message = {
@@ -188,25 +189,28 @@ class Worker(object):
             'method': 'prompt'
         }
         if callback:
-            self.set_callback_message(callback, message)
+            self.set_callback_message(callback, message, args)
         self.handler.write_message(message)
 
-    def set_callback_message(self, callback, message):
+    def set_callback_message(self, callback, message, args):
         if type(callback) != types.FunctionType:
             raise Exception("callback must be a function")
         req_id = str(uuid.uuid1())
         message['requestId'] = req_id
-        callback_map[req_id] = callback
+        callback_map[req_id] = (callback, args)
         def delete_callback():
             callback_map.pop(req_id, None)
-        threading.Timer(30, delete_callback).start()
+        threading.Timer(10, delete_callback).start()
 
-    def create_new_session(self, conf_path_list=None, callback=None):
+    def create_new_session(self, conf_path_list, callback, args):
         '''
         create new session
         conf_path_list: A list, indicating the path of the session configuration file, self.xsh_conf_id means duplicate current session
         callback: Callback function, the parameter is the SessionContext instance object corresponding to the newly created session list
         '''
+        if not conf_path_list:
+            logging.info("conf_path_list is None, do notihing")
+            return
 
         message = {
             'args': conf_path_list,
@@ -214,7 +218,7 @@ class Worker(object):
             'method': 'createNewSession'
         }
         if callback:
-            self.set_callback_message(self._init_callback_worker_list(callback), message)
+            self.set_callback_message(self._init_callback_worker_list(callback), message, args)
         self.handler.write_message(message)
 
     def _init_callback_worker(self, callback):
@@ -224,11 +228,11 @@ class Worker(object):
         return warp
 
     def _init_callback_worker_list(self, callback):
-        def warp(session_infos):
+        def warp(ctx, session_infos, *args):
             context_list = []
             for session_info in session_infos:
                 context_list.append(SessionContext(workers[session_info['id']]))
-            callback(context_list)
+            callback(ctx, context_list, *args)
 
         return warp
 

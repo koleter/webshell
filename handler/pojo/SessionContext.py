@@ -10,21 +10,23 @@ class SessionContext:
         '''
         return self._worker.on_recv(data, sleep)
 
-    def prompt(self, msg, callback):
+    def prompt(self, msg, callback, *args):
         '''
         Pop-up window to get user input
         msg: prompt information
-        callback: a callback function, the result of user input will be a parameter of callback, it has two args, callback(worker, args)
+        callback: a callback function, it has at least two parameters, callback(ctx, user_input)
+        args: The User-Defined parameters of callback
         '''
-        return self._worker.prompt(msg, callback)
+        return self._worker.prompt(msg, callback, args)
 
-    def create_new_session(self, conf_path_list=None, callback=None):
+    def create_new_session(self, conf_path_list=None, callback=None, *args):
         '''
         create new session
         conf_path_list: A list, indicating the path of the session configuration file, self.get_xsh_conf_id() means duplicate current session
         callback: Callback function, the parameter is the SessionContext instance object corresponding to the newly created session list
+        args: The User-Defined parameters of callback
         '''
-        return self._worker.create_new_session(conf_path_list, callback)
+        return self._worker.create_new_session(conf_path_list, callback, args)
 
     def send(self, data):
         self._worker.send(data)

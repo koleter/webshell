@@ -1,4 +1,4 @@
-## WebShell
+# WebShell
 
 
 ### Introduction
@@ -10,15 +10,13 @@
 2. 可以创建新的会话,但是创建出来的会话用户不可控,你无法在脚本中向新创建的会话发送某些命令
 3. 可以发送命令但是无法接收命令执行后的返回结果(该项目可以做到这一点,但是由于技术原因,有时获取的结果可能会有些奇怪)
 
-网上找了一些ssh客户端工具,发现基本都没有脚本功能,之后在github上找到了一个webssh的项目(感谢大佬),在此基础上自己尝试着做了这么一个工具出来
-
 该项目使用了tornado,websocket,antd,xterm
 
-### Preview
+## Preview
 
 ![webshell.jpg](preview/webshell.jpg)
 
-### script
+## script
 鼠标移动到窗口的最右侧可弹出脚本窗口
 ![script.jpg](preview%2Fscript.jpg)
 
@@ -56,10 +54,10 @@ def Main(ctx):
 ![get_session_conf_key.jpg](preview%2Fget_session_conf_key.jpg)
 
 
-### start
+## start
 运行main.py,浏览器打开http://localhost:8888
 
-### Hot key
+## Hot key
 ctrl + insert: 复制
 
 shift + insert: 粘贴
