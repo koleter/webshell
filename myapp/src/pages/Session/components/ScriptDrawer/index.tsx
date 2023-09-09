@@ -3,7 +3,7 @@ import {Button, Drawer, Form, Input, message, Modal, Radio} from "antd";
 import {ProList} from "@ant-design/pro-components";
 import {FormattedMessage} from "@@/plugin-locale/localeExports";
 import {request} from "@@/plugin-request/request";
-import util from "@/util";
+import util, {showMessage} from "@/util";
 import {sessionIdMapFileName, sessionIdRef} from "@/pages/Session";
 
 const ScriptDrawer: React.FC = (props) => {
@@ -70,8 +70,13 @@ const ScriptDrawer: React.FC = (props) => {
           title: {
             render: (text, row) => {
               return <Button onClick={() => {
+                // 确保当前存在活跃的session
                 const sessionList = sessions.filter(session => session.key == activeKey);
-                if (sessionList.length != 1) {
+                if (sessionList.length != 1 || !sessionList[0].isConnected) {
+                  showMessage({
+                    status: 'error',
+                    content: 'scripts cannot be executed in a closed session'
+                  });
                   return;
                 }
 

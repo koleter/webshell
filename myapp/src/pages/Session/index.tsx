@@ -173,13 +173,12 @@ const Session: React.FC = () => {
       </Content>
     </Layout>
 
-
     <ScriptDrawer
       activeKey={activeKey}
       sessions={sessions}
       drawerOpen={drawerOpen}
       setDrawerOpen={setDrawerOpen}
-    ></ScriptDrawer>
+    />
   </>;
 };
 
