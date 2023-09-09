@@ -200,7 +200,7 @@ class Worker(object):
         callback_map[req_id] = (callback, args)
         def delete_callback():
             callback_map.pop(req_id, None)
-        threading.Timer(10, delete_callback).start()
+        threading.Timer(30, delete_callback).start()
 
     def create_new_session(self, conf_path_list, callback, args):
         '''

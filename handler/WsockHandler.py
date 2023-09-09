@@ -116,7 +116,13 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 })
         elif type == 'callback':
             requestId = msg.get('requestId')
-            t = callback_map[requestId]
+            t = callback_map.get(requestId)
+            if not t:
+                worker.handler.write_message({
+                    'type': 'message',
+                    'status': 'error',
+                    "content": 'server error'
+                })
             try:
                 t[0](SessionContext(worker), msg.get('args'), *t[1])
             except Exception as e:
