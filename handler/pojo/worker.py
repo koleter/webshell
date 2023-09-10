@@ -109,13 +109,12 @@ class Worker(object):
                 self.close(reason='websocket closed')
 
 
-    def on_recv(self, data, sleep=0.5):
+    def on_recv(self, data, sleep=0.1):
         logging.info('worker {} on read'.format(self.id))
         newline = data[-1]
         data = data[:-1]
         self.data_to_dst.append(data)
         self._on_write()
-        time.sleep(0.5)
         self._on_read()
 
         self.data_to_dst.append(newline)
