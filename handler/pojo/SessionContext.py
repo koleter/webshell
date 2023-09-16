@@ -2,7 +2,7 @@ class SessionContext:
     def __init__(self, worker):
         self._worker = worker
 
-    def on_recv(self, data, sleep=0.5):
+    def on_recv(self, data, sleep=0.2):
         '''
         send data and receive result
         data: The command which will be execute

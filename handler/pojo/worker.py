@@ -54,7 +54,7 @@ class Worker(object):
         self.handler = None
         self.mode = IOLoop.READ
         self.closed = False
-        self.lock = threading.Lock()
+        # self.lock = threading.Lock()
         self.debug = debug
         self.xsh_conf_id = None
 
@@ -88,7 +88,8 @@ class Worker(object):
         try:
             data = self.chan.recv(BUF_SIZE)
         except (OSError, IOError) as e:
-            logging.error(e)
+            traceback.print_exc()
+            logging.error(str(e))
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
                 self.close(reason='chan error on reading')
         else:
@@ -109,10 +110,11 @@ class Worker(object):
                 self.close(reason='websocket closed')
 
 
-    def on_recv(self, data, sleep=0.1):
+    def on_recv(self, data, sleep=0.2):
         logging.info('worker {} on read'.format(self.id))
         newline = data[-1]
         data = data[:-1]
+
         self.data_to_dst.append(data)
         self._on_write()
         self._on_read()
@@ -128,29 +130,30 @@ class Worker(object):
             traceback.print_exc()
             if self.chan.closed or errno_from_exception(e) in _ERRNO_CONNRESET:
                 self.close(reason='chan error on reading')
-        else:
-            if not data:
-                self.close(reason='chan closed')
                 return
 
-            val = str(data, 'utf-8')
-            try:
-                res = {
-                    'val': val,
-                    'type': 'data'
-                }
-                self.handler.write_message(res, binary=False)
-            except tornado.websocket.WebSocketClosedError:
-                self.close(reason='websocket closed')
-            handler_str = reset_font(val)
-            return str(handler_str)
+        if not data:
+            self.close(reason='chan closed')
+            return
+
+        val = str(data, 'utf-8')
+        try:
+            res = {
+                'val': val,
+                'type': 'data'
+            }
+            self.handler.write_message(res, binary=False)
+        except tornado.websocket.WebSocketClosedError:
+            self.close(reason='websocket closed')
+        handler_str = reset_font(val)
+        return str(handler_str)
 
 
-    def send(self, data):
+    def send(self, data, update_handler=True):
         self.data_to_dst.append(data)
-        self._on_write()
+        self._on_write(update_handler)
 
-    def _on_write(self):
+    def _on_write(self, update_handler=True):
         logging.debug('worker {} on write'.format(self.id))
         if not self.data_to_dst:
             return
@@ -172,7 +175,7 @@ class Worker(object):
             if data:
                 self.data_to_dst.append(data)
                 self.update_handler(IOLoop.WRITE)
-            else:
+            elif update_handler:
                 self.update_handler(IOLoop.READ)
 
     def prompt(self, msg, callback, args):
