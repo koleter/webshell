@@ -60,9 +60,7 @@ class Worker(object):
 
     def __call__(self, fd, events):
         if events & IOLoop.READ:
-            logging.info("{} IOLoop.READ start".format(self.id))
             self._on_read()
-            logging.info("{} IOLoop.READ end".format(self.id))
         if events & IOLoop.WRITE:
             logging.info("{} IOLoop.WRITE".format(self.id))
             self._on_write()

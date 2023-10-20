@@ -3,7 +3,7 @@ import type {DataNode} from 'antd/es/tree';
 import React, {useState} from 'react';
 import "./index.less"
 import "xterm/css/xterm.css"
-import Xterminal from "@/pages/Session/components/Xterminal";
+import Index from "@/pages/Session/components/Xterminal";
 import ScriptDrawer from "@/pages/Session/components/ScriptDrawer";
 import SessionList from "@/pages/Session/components/SessionList";
 
@@ -159,7 +159,7 @@ const Session: React.FC = () => {
           onChange={onChange}/>
         {
           sessions.map(item => {
-            return <Xterminal
+            return <Index
               key={item.key}
               id={item.key}
               sessionConfId={item.sessionConfId}

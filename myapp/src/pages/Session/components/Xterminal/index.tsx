@@ -2,10 +2,11 @@ import {useEffect, useRef, useState} from "react";
 import React from "react";
 import {Terminal} from "xterm"
 import "xterm/css/xterm.css"
-import util, {sleep, msgMap, sessionStatusMap, showMessage} from "../../../util"
-import {DISCONNECTED, CONNECTING, CONNECTED} from "../../../const"
-import {sessionIdRef, sessionIdMapFileName} from "../index"
+import util, {sleep, msgMap, sessionStatusMap, showMessage} from "../../../../util"
+import {DISCONNECTED, CONNECTING, CONNECTED} from "../../../../const"
+import {sessionIdRef, sessionIdMapFileName} from "../../index"
 import {request} from 'umi';
+import "./index.less"
 
 const termOptions = {
   fontSize: 12,
@@ -20,7 +21,7 @@ const termOptions = {
 
 const style = {};
 
-const Xterminal: React.FC = (props) => {
+const Index: React.FC = (props) => {
   const terminalRef = useRef<null | HTMLDivElement>(null);
   let {id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey} = props;
   // console.log(id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey);
@@ -289,4 +290,4 @@ const Xterminal: React.FC = (props) => {
 }
 
 // export default React.memo(Xterminal);
-export default Xterminal;
+export default Index;
