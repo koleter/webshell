@@ -2,14 +2,13 @@ import logging
 import traceback
 import types
 import uuid
-import weakref
 
 import paramiko
 import threading
 import time
 
 from handler.pojo.SessionContext import SessionContext
-from utils import reset_font, gen_id
+from utils import reset_font, gen_id, find_sub_str_index
 
 try:
     import secrets
@@ -43,7 +42,7 @@ def recycle_worker(worker):
 
 
 class Worker(object):
-    def __init__(self, loop, ssh, chan: paramiko.Channel, dst_addr, debug=False):
+    def __init__(self, loop, ssh, chan: paramiko.Channel, dst_addr, login_script=[], debug=False):
         self.loop = loop
         self.ssh = ssh
         self.chan = chan
@@ -57,6 +56,7 @@ class Worker(object):
         # self.lock = threading.Lock()
         self.debug = debug
         self.xsh_conf_id = None
+        self.login_script = login_script
 
     def __call__(self, fd, events):
         if events & IOLoop.READ:
@@ -104,11 +104,15 @@ class Worker(object):
                 if not self.handler:
                     logging.error("{}'s handler is None".format(self.id))
                 self.handler.write_message(res, binary=False)
+                if self.login_script is not None and len(self.login_script) != 0 and self.login_script[0]['expect'] in val:
+                    self.send(self.login_script[0]['command'] + "\r")
+                    self.login_script = self.login_script[1:]
+
             except tornado.websocket.WebSocketClosedError:
                 self.close(reason='websocket closed')
 
 
-    def on_recv(self, data, sleep=0.2):
+    def on_recv(self, data, sleep=0.3):
         logging.info('worker {} on read'.format(self.id))
         newline = data[-1]
         data = data[:-1]
@@ -143,6 +147,8 @@ class Worker(object):
             self.handler.write_message(res, binary=False)
         except tornado.websocket.WebSocketClosedError:
             self.close(reason='websocket closed')
+        i = find_sub_str_index(val, "\n", 3)
+        val = val[i+1:]
         handler_str = reset_font(val)
         return str(handler_str)
 

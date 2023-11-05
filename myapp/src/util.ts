@@ -25,3 +25,20 @@ export function showMessage(res) {
     content: res.content
   })
 }
+
+export function defineValidatorWithErrMessage(msg) {
+  return [() => ({
+            validator(e, value) {
+              if (value) {
+                return Promise.resolve();
+              }
+              showMessage({
+                status: 'error',
+                content: msg
+              })
+              return Promise.reject(new Error());
+            },
+          }),
+    {required: true, message: msg}
+        ]
+}

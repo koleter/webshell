@@ -1,86 +1,18 @@
 import React, {useEffect, useState} from "react";
-import {Dropdown, Form, Input, message, Modal, Tree} from "antd";
+import {Dropdown, Form, Input, message, Modal, Tabs, Tree, Button, Row, Col, Space} from "antd";
+import {
+  EditableProTable,
+  ProCard,
+  ProFormField,
+} from '@ant-design/pro-components';
 import {DataNode, TreeProps} from "antd/es/tree";
 import {request} from "@@/plugin-request/request";
-import util from "@/util";
+import util, {defineValidatorWithErrMessage} from "@/util";
 import {sessionIdMapFileName} from "@/pages/Session";
 
 const {DirectoryTree} = Tree;
 let sessionRootKey = "";
-
-
-function genSessionFormProperties() {
-  return <>
-    <Form.Item
-      label="会话名"
-      name="sessionName"
-      initialValue={""}
-      rules={[{required: true, message: '请输入会话名!'}]}
-    >
-      <Input/>
-    </Form.Item>
-
-    <Form.Item
-      label="主机"
-      name="hostname"
-      initialValue={""}
-      rules={[{required: true, message: '请输入主机!'}]}
-    >
-      <Input/>
-    </Form.Item>
-
-    <Form.Item
-      label="端口"
-      name="port"
-      initialValue={22}
-      rules={[{required: true, message: '请输入端口!'}]}
-    >
-      <Input/>
-    </Form.Item>
-
-    <Form.Item
-      label="用户名"
-      name="username"
-      initialValue={""}
-      rules={[{required: true, message: '请输入用户名!'}]}
-    >
-      <Input/>
-    </Form.Item>
-
-    <Form.Item
-      label="密码"
-      name="password"
-      initialValue={""}
-    >
-      <Input.Password/>
-    </Form.Item>
-
-    <Form.Item
-      label="密钥文件路径"
-      name="privatekey"
-      initialValue={""}
-    >
-      <Input/>
-    </Form.Item>
-
-    <Form.Item
-      label="密钥密码"
-      name="passphrase"
-      initialValue={""}
-    >
-      <Input.Password/>
-    </Form.Item>
-
-    <Form.Item
-      label="totp"
-      name="totp"
-      initialValue={""}
-    >
-      <Input/>
-    </Form.Item>
-  </>
-}
-
+const defaultSessionPropertyActiveKey = 'loginScript';
 
 const SessionList: React.FC = (props) => {
   const {sessions, setSessions, setActiveKey} = props;
@@ -92,6 +24,8 @@ const SessionList: React.FC = (props) => {
   const [addSessionModalVisiable, setAddSessionModalVisiable] = useState(false);
   const [editForm] = Form.useForm();
   const [editSessionModalVisiable, setEditSessionModalVisiable] = useState(false);
+  const [dataSource, setDataSource] = useState([]);
+  const [sessionPropertyActiveKey, setSessionPropertyActiveKey] = useState(defaultSessionPropertyActiveKey);
 
   useEffect(() => {
     request(util.baseUrl + 'conf', {
@@ -107,6 +41,186 @@ const SessionList: React.FC = (props) => {
       setTreeData(res.defaultTreeData);
     })
   }, [refreshTreeData])
+
+  function genSessionBaseInfo(showType: string) {
+    return <>
+      {
+        showType === 'edit' &&
+        <Form.Item
+          label="key"
+          name="key"
+          initialValue={""}
+          rules={[{required: true, message: 'please enter key!'}]}
+        >
+          <Input disabled={true}/>
+        </Form.Item>
+      }
+      < Form.Item
+        label="会话名"
+        name="sessionName"
+        initialValue={""}
+        rules={defineValidatorWithErrMessage('请输入会话名!')}
+      >
+        <Input/>
+      </Form.Item>
+
+      <Form.Item
+        label="主机"
+        name="hostname"
+        initialValue={""}
+        rules={defineValidatorWithErrMessage('请输入主机!')}
+      >
+        <Input/>
+      </Form.Item>
+
+      <Form.Item
+        label="端口"
+        name="port"
+        initialValue={22}
+        rules={defineValidatorWithErrMessage('请输入端口!')}
+      >
+        <Input/>
+      </Form.Item>
+
+      <Form.Item
+        label="用户名"
+        name="username"
+        initialValue={""}
+        rules={defineValidatorWithErrMessage('请输入用户名!')}
+      >
+        <Input/>
+      </Form.Item>
+
+      <Form.Item
+        label="密码"
+        name="password"
+        initialValue={""}
+      >
+        <Input.Password/>
+      </Form.Item>
+
+      <Form.Item
+        label="密钥文件路径"
+        name="privatekey"
+        initialValue={""}
+      >
+        <Input/>
+      </Form.Item>
+
+      <Form.Item
+        label="密钥密码"
+        name="passphrase"
+        initialValue={""}
+      >
+        <Input.Password/>
+      </Form.Item>
+
+      <Form.Item
+        label="totp"
+        name="totp"
+        initialValue={""}
+      >
+        <Input/>
+      </Form.Item>
+    </>
+  }
+
+  const columns = [
+    {
+      title: '预期字符串',
+      dataIndex: 'expect',
+      formItemProps: {
+        rules: [
+          {
+            required: true,
+            whitespace: true,
+            message: '此项是必填项',
+          }
+        ],
+      },
+    },
+    {
+      title: '发送的命令',
+      dataIndex: 'command',
+      formItemProps: {
+        rules: [
+          {
+            required: true,
+            whitespace: true,
+            message: '此项是必填项',
+          }
+        ],
+      },
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      width: 50,
+      render: () => {
+        return null;
+      },
+    },
+  ];
+
+  function genLoginScript() {
+    return <EditableProTable
+      columns={columns}
+      rowKey="id"
+      value={dataSource}
+      onChange={setDataSource}
+      recordCreatorProps={{
+        newRecordType: 'dataSource',
+        record: () => ({
+          id: Date.now(),
+        }),
+      }}
+      editable={{
+        type: 'multiple',
+        editableKeys: dataSource.map(item => item.id),
+        actionRender: (row, config, defaultDoms) => {
+          return [defaultDoms.delete];
+        },
+        onValuesChange: (record, recordList) => {
+          setDataSource(recordList);
+        },
+      }}
+    />
+  }
+
+  function genSessionFormProperties(showType: string) {
+    return <Tabs style={{
+      height: "60vh"
+    }}
+                 activeKey={sessionPropertyActiveKey}
+                 tabBarGutter={4}
+                 tabPosition={'left'}
+                 onChange={(newActiveKey: string) => {
+                   setSessionPropertyActiveKey(newActiveKey);
+                 }}
+                 items={[{
+                   key: 'baseInfo',
+                   label: '基本信息',
+                   forceRender: true,
+                   children: genSessionBaseInfo(showType)
+                 }, {
+                   key: 'loginScript',
+                   label: '登录脚本',
+                   forceRender: true,
+                   children: genLoginScript()
+                 }]}
+    />
+  }
+
+  function calcSessionPropertyModalWidth() {
+    switch (sessionPropertyActiveKey) {
+      case "baseInfo":
+        return '35vw'
+      case 'loginScript':
+        return '35vw';
+      default:
+        throw new Error("unexpect active key: " + sessionPropertyActiveKey);
+    }
+  }
 
   /**
    *
@@ -172,6 +286,7 @@ const SessionList: React.FC = (props) => {
         label: (
           <span onClick={() => {
             form.resetFields();
+            setDataSource([]);
             setModalNode(node);
             setAddSessionModalVisiable(true);
           }}>新增会话</span>
@@ -224,7 +339,10 @@ const SessionList: React.FC = (props) => {
                 if (res.status !== 'success') {
                   message[res.status](res.msg);
                 } else {
-                  editForm.setFieldsValue(Object.assign({key: node.key}, JSON.parse(res.content)));
+                  const sessionInfo = JSON.parse(res.content);
+                  console.log(sessionInfo)
+                  setDataSource(sessionInfo.login_script || []);
+                  editForm.setFieldsValue(Object.assign({key: node.key}, sessionInfo));
                   setEditSessionModalVisiable(true);
                 }
               })
@@ -299,6 +417,9 @@ const SessionList: React.FC = (props) => {
     })
   };
 
+  function commonSessionModalClose() {
+    setSessionPropertyActiveKey(defaultSessionPropertyActiveKey);
+  }
 
   return <>
     <DirectoryTree
@@ -312,6 +433,7 @@ const SessionList: React.FC = (props) => {
     />
 
     <Modal
+      width={calcSessionPropertyModalWidth()}
       maskClosable={false}
       open={editSessionModalVisiable}
       closable={false}
@@ -320,6 +442,7 @@ const SessionList: React.FC = (props) => {
       }}
       onCancel={() => {
         setEditSessionModalVisiable(false);
+        commonSessionModalClose();
       }}
     >
       <Form
@@ -345,6 +468,7 @@ const SessionList: React.FC = (props) => {
             })
             return;
           }
+          formInfo.login_script = dataSource || [];
           request(util.baseUrl + 'conf', {
             method: 'POST',
             body: JSON.stringify({
@@ -369,15 +493,7 @@ const SessionList: React.FC = (props) => {
             {
               modalNode?.isLeaf ?
                 <>
-                  <Form.Item
-                    label="key"
-                    name="key"
-                    initialValue={""}
-                    rules={[{required: true, message: 'please enter key!'}]}
-                  >
-                    <Input disabled={true}/>
-                  </Form.Item>
-                  {genSessionFormProperties()}
+                  {genSessionFormProperties("edit")}
                 </>
                 : <Form.Item
                   label="文件夹名"
@@ -393,6 +509,7 @@ const SessionList: React.FC = (props) => {
       </Form>
     </Modal>
     <Modal
+      width={calcSessionPropertyModalWidth()}
       maskClosable={false}
       open={addSessionModalVisiable}
       closable={false}
@@ -401,11 +518,13 @@ const SessionList: React.FC = (props) => {
       }}
       onCancel={() => {
         setAddSessionModalVisiable(false);
+        commonSessionModalClose();
       }}
     >
       <Form
         form={form}
         onFinish={(formInfo) => {
+          formInfo.login_script = dataSource || [];
           request(util.baseUrl + 'conf', {
             method: 'POST',
             body: JSON.stringify({
@@ -426,7 +545,7 @@ const SessionList: React.FC = (props) => {
           })
         }}
       >
-        {genSessionFormProperties()}
+        {genSessionFormProperties("create")}
       </Form>
     </Modal>
   </>

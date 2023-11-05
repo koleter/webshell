@@ -1,6 +1,7 @@
 import datetime
 import ipaddress
 import re
+
 try:
     import secrets
 except ImportError:
@@ -23,15 +24,14 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-#设置将日志输出到控制台
+# 设置将日志输出到控制台
 controlshow = logging.StreamHandler()
 controlshow.setLevel(logging.INFO)
-#设置日志的格式
+# 设置日志的格式
 formatter = logging.Formatter("%(asctime)s - %(threadName)s - %(filename)s:%(lineno)d - %(levelname)s: %(message)s")
 controlshow.setFormatter(formatter)
 
 logger.addHandler(controlshow)
-
 
 numeric = re.compile(r'[0-9]+$')
 allowed = re.compile(r'(?!-)[a-z0-9-]{1,63}(?<!-)$', re.IGNORECASE)
@@ -168,6 +168,20 @@ def parse_origin_from_url(url):
     return '{}://{}'.format(scheme, netloc)
 
 
+def find_sub_str_index(str, substr, count=1):
+    """
+    找到在str中出现了指定次数的substr的下标,若没有找到返回-1
+    """
+    res = -1
+    idx = 0
+    for i in range(count):
+        res = str.find(substr, idx)
+        if res == -1:
+            return res
+        idx = res + 1
+    return res
+
+
 # 参考https://blog.csdn.net/weixin_43988842/article/details/106169040
 ansi_escape = re.compile(
     # 自行发现的控制序列
@@ -177,7 +191,7 @@ ansi_escape = re.compile(
     r'(\x1b[cDEHMZ78>=])|'
     r'(\x1b(%n|#8|\(n|\)n))|'
     # ESC 控制转义序列
-    r'(\x1b\[([LMPXacefmnsu]|n[A-GJKSTdghiIq`]|\d+?;\d+?H|\?nK|\d+?;\d+?r))|'
+    r'(\x1b\[([LMJAPXacefmnsu]|n[A-GJKSTdghiIq`]|\d+?;\d+?H|\?nK|\d+?;\d+?r))|'
     # ECMA-48 模式选择
     r'(\x1b\[([2-5][Ih]|20[Ih]))|'
     # DEC 私有模式序列
@@ -209,6 +223,7 @@ def reset_font(s):
 
 def gen_id():
     return secrets.token_urlsafe(nbytes=32) if secrets else uuid4().hex
+
 
 if __name__ == '__main__':
     text = '/\r\n\x1b[30;42m[ID ] IP               Port   Hostname              Region          \x1b[0m\r\n\x1b[1;32mOpt or ID>:\x1b[0m'

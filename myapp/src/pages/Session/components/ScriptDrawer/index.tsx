@@ -212,8 +212,7 @@ const ScriptDrawer: React.FC = (props) => {
           name="scriptOwner"
           rules={[() => ({
             validator(e, value) {
-              console.log(e);
-              if (value || value === "") {
+              if (value) {
                 return Promise.resolve();
               }
               return Promise.reject(new Error('请选择按钮类型!'));

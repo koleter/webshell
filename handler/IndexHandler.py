@@ -132,6 +132,8 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         return 'utf-8'
 
     def ssh_connect(self, args):
+        login_script = args[5]
+        args = args[:5]
         ssh = self.ssh_client
         dst_addr = args[:2]
         logging.info('Connecting to {}:{}'.format(*dst_addr))
@@ -150,7 +152,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         chan = ssh.invoke_shell(term=TERM)
         # chan.setblocking(0)
         chan.settimeout(1)
-        worker = Worker(self.loop, ssh, chan, dst_addr, self.debug)
+        worker = Worker(self.loop, ssh, chan, dst_addr, login_script, self.debug)
         worker.encoding = options.encoding if options.encoding else \
             self.get_default_encoding(ssh)
         return worker
@@ -196,7 +198,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
                 pkey = None
 
             self.ssh_client.totp = totp
-            args = (hostname, port, username, password, pkey)
+            args = (hostname, port, username, password, pkey, session_conf.get('login_script'))
         except InvalidValueError as exc:
             raise tornado.web.HTTPError(400, str(exc))
 

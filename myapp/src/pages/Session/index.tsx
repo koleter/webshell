@@ -89,7 +89,7 @@ const Session: React.FC = () => {
     }} onMouseEnter={() => {
       sessions.length && setDrawerOpen(true);
     }}/>
-    <Layout>
+    <Layout hasSider>
       <Sider
         style={{height: "100vh", backgroundColor: 'white'}}>
         <SessionList
