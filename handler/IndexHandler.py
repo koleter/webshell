@@ -172,6 +172,7 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
         try:
             data = json.loads(self.request.body)
             session_conf_file_path = os.path.join(xsh_dir_path, data['filePath'])
+            session_name = data.get('sessionName')
             with open(session_conf_file_path, 'r') as f:
                 session_conf = json.loads(f.read())
                 hostname = session_conf['hostname']
@@ -215,6 +216,8 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
             # self.loop.call_later(options.delay, recycle_worker, worker)
             self.result.update(id=worker.id, encoding=worker.encoding)
             self.result.update(sessionName=session_conf['sessionName'])
+            if session_name:
+                self.result.update(sessionName=session_name)
             self.result.update(filePath=data['filePath'])
 
         self.write(self.result)

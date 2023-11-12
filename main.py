@@ -9,6 +9,7 @@ from handler.NotFoundHandler import NotFoundHandler
 from handler.ConfigHandler import ConfigHandler
 from handler.IndexHandler import IndexHandler
 from handler import const
+import webbrowser
 
 from settings import (
     get_app_settings,  get_host_keys_settings, get_policy_setting,
@@ -62,6 +63,8 @@ def main():
     if ssl_ctx:
         server_settings.update(ssl_options=ssl_ctx)
         app_listen(app, options.sslport, options.ssladdress, server_settings)
+    url = "http://localhost:{}".format(options.port)
+    webbrowser.open(url, new=0, autoraise=True)
     loop.start()
 
 

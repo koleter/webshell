@@ -19,14 +19,16 @@ class SessionContext:
         '''
         return self._worker.prompt(msg, callback, args)
 
-    def create_new_session(self, conf_path_list=None, callback=None, *args):
+    def create_new_session(self, conf_list=None, callback=None, *args):
         '''
         create new session
-        conf_path_list: A list, indicating the path of the session configuration file, self.get_xsh_conf_id() means duplicate current session
+        conf_list: A list, Elements can be strings or objects, The element can be a string or an object.
+                If it is a string type, it should be sessionId. If it is an object, the object should have two attributes: conf_id and session_name,
+                 which respectively correspond to the configuration file of the created session and the created session name.
         callback: Callback function, the parameter is the SessionContext instance object corresponding to the newly created session list
         args: The User-Defined parameters of callback
         '''
-        return self._worker.create_new_session(conf_path_list, callback, args)
+        return self._worker.create_new_session(conf_list, callback, args)
 
     def send(self, data):
         self._worker.send(data)

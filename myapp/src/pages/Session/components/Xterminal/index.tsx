@@ -127,16 +127,28 @@ const Index: React.FC = (props) => {
   }, []);
 
   const methodMap = {
-    createNewSession: (sessionConfIds, callback) => {
+    createNewSession: (sessionConfs, callback) => {
       const arr = [];
-      for (let i = 0; i < sessionConfIds.length; i++) {
+      sessionConfs.forEach(sessionConf => {
+        var body;
+        switch (Object.prototype.toString.call(sessionConf)) {
+          case "[object String]":
+            body = {
+              filePath: sessionConf
+            };
+            break;
+          case '[object Object]':
+            body = {
+              filePath: sessionConf.conf_id,
+              sessionName: sessionConf.session_name
+            };
+        }
         arr.push(request(util.baseUrl, {
           method: 'POST',
-          body: JSON.stringify({
-            filePath: sessionConfIds[i]
-          }),
-        }))
-      }
+          body: JSON.stringify(body),
+        }));
+      });
+
       Promise.all(arr).then(res => {
         for (let i = 0; i < res.length; i++) {
           if (res[i].status) {
@@ -171,6 +183,7 @@ const Index: React.FC = (props) => {
           }
 
           const interval = 200;
+
           // 创建新会话需要等待所有会话的websocket与后端建立完毕
           function checkAllSessionIsReady(time) {
             // 最多等4秒,无法全部执行成功的话就不再执行回调
@@ -249,7 +262,8 @@ const Index: React.FC = (props) => {
         console.log(`sock: ${id} closed`, e);
         try {
           sessionIdRef[id].term.write("\nthis session is closed.....");
-        } catch (e) {}
+        } catch (e) {
+        }
         // removeTabByKey(id);
         window.onresize = null;
         delete sessionIdRef[id];

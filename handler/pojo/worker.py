@@ -208,18 +208,18 @@ class Worker(object):
             callback_map.pop(req_id, None)
         threading.Timer(30, delete_callback).start()
 
-    def create_new_session(self, conf_path_list, callback, args):
+    def create_new_session(self, conf_list, callback, args):
         '''
         create new session
         conf_path_list: A list, indicating the path of the session configuration file, self.xsh_conf_id means duplicate current session
         callback: Callback function, the parameter is the SessionContext instance object corresponding to the newly created session list
         '''
-        if not conf_path_list:
+        if not conf_list:
             logging.info("conf_path_list is None, do notihing")
             return
 
         message = {
-            'args': conf_path_list,
+            'args': conf_list,
             'type': 'execMethod',
             'method': 'createNewSession'
         }

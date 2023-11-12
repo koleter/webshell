@@ -6,6 +6,7 @@ import "xterm/css/xterm.css"
 import Index from "@/pages/Session/components/Xterminal";
 import ScriptDrawer from "@/pages/Session/components/ScriptDrawer";
 import SessionList from "@/pages/Session/components/SessionList";
+import {showMessage} from "@/util";
 
 
 const {Content, Sider} = Layout;
@@ -119,6 +120,31 @@ const Session: React.FC = () => {
               label: (
                 <Dropdown menu={{
                   items: [
+                    {
+                    label: (
+                      <span onClick={() => {
+                        var name = prompt("重命名");
+                        if (!name.trim()) {
+                          showMessage({
+                            status: "error",
+                            content: "name can not be empty"
+                          });
+                          return;
+                        }
+                        setSessions((sessions) => {
+                          const data = [...sessions];
+                          for (const session of data) {
+                            if (session.key === item.key) {
+                              session.label = name;
+                              break;
+                            }
+                          }
+                          return data;
+                        });
+                      }}>重命名</span>
+                    ),
+                    key: 'closeOtherTabs'
+                  },
                   {
                     label: (
                       <span onClick={() => {
