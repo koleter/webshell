@@ -99,7 +99,7 @@ const Session: React.FC = () => {
           setActiveKey={setActiveKey}
         />
       </Sider>
-
+      <div style={{width: '2px', height: '100vh', cursor: 'col-resize'}}></div>
       <Content>
         <Tabs
           type="editable-card"
@@ -143,7 +143,7 @@ const Session: React.FC = () => {
                         });
                       }}>重命名</span>
                     ),
-                    key: 'closeOtherTabs'
+                    key: 'rename'
                   },
                   {
                     label: (

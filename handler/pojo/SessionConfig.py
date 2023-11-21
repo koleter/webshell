@@ -30,6 +30,11 @@ class SessionConfig(BaseConfig):
                     'key': relative_file_path,
                     'isLeaf': True
                 })
+        def sort(item):
+            return (1 if item['isLeaf'] else -1, item['title'])
+
+        if parent_item.get('children') is not None:
+            parent_item.get('children').sort(key=sort)
 
     def get(self):
         default_root_dir = {

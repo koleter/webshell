@@ -50,8 +50,8 @@ class BaseConfig:
             return status_success(OPERATION_SUCCESS)
         elif type == 'renameDir':
             src = self._get_real_path(args['src'])
-            dir_name = os.path.dirname(src)
-            dst = os.path.join(self.path, dir_name, args['dst'])
+            dst_file_name = os.path.dirname(src)
+            dst = os.path.join(self.path, dst_file_name, args['dst'])
             if os.path.exists(dst):
                 return status_error("dir {} already exists".format(dst))
             os.rename(src, dst)
@@ -60,10 +60,12 @@ class BaseConfig:
             src = self._get_real_path(args['src'])
             name = src[src.rfind("\\") + 1:]
             dst = self._get_real_path(args['dst'])
-            dir_name = os.path.join(dst, name)
-            if os.path.exists(dir_name):
+            if os.path.isfile(dst):
+                dst = os.path.dirname(dst)
+            dst_file_name = os.path.join(dst, name)
+            if os.path.exists(dst_file_name):
                 return status_error("dir {} already exists".format(dst))
-            shutil.move(src, dir_name)
+            shutil.move(src, dst_file_name)
             return status_success(OPERATION_SUCCESS)
         elif type == 'readFile':
             path = self._get_real_path(args['path'])

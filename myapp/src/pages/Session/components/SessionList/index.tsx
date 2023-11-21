@@ -12,7 +12,7 @@ import {sessionIdMapFileName} from "@/pages/Session";
 
 const {DirectoryTree} = Tree;
 let sessionRootKey = "";
-const defaultSessionPropertyActiveKey = 'loginScript';
+const defaultSessionPropertyActiveKey = 'baseInfo';
 
 const SessionList: React.FC = (props) => {
   const {sessions, setSessions, setActiveKey} = props;
@@ -396,8 +396,16 @@ const SessionList: React.FC = (props) => {
   const onDrop: TreeProps['onDrop'] = (info) => {
     const dropKey = info.node.key;
     const dragKey = info.dragNode.key;
-    if (dragKey.substr(0, dragKey.lastIndexOf("\\")) == dropKey) {
-      return;
+    let srcDir = dragKey;
+    if (info.dragNode.isLeaf) {
+      srcDir = dragKey.substr(0, dragKey.lastIndexOf("\\"));
+    }
+    let dstDir = dropKey;
+    if (info.dragNode.isLeaf) {
+      dstDir = dropKey.substr(0, dropKey.lastIndexOf("\\"));
+    }
+    if (srcDir == dstDir) {
+      return true;
     }
     request(util.baseUrl + 'conf', {
       method: 'POST',

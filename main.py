@@ -24,8 +24,6 @@ def make_handlers(loop, options):
     handlers = [
         (r'/', IndexHandler, dict(loop=loop, policy=policy,
                                   host_keys_settings=host_keys_settings)),
-        (r'/static/session', IndexHandler, dict(loop=loop, policy=policy,
-                                  host_keys_settings=host_keys_settings)),
         (r'/session', IndexHandler, dict(loop=loop, policy=policy,
                                                 host_keys_settings=host_keys_settings)),
         (r'/ws', WsockHandler, dict(loop=loop)),
@@ -63,7 +61,7 @@ def main():
     if ssl_ctx:
         server_settings.update(ssl_options=ssl_ctx)
         app_listen(app, options.sslport, options.ssladdress, server_settings)
-    url = "http://localhost:{}".format(options.port)
+    url = "http://localhost:{}/session".format(options.port)
     webbrowser.open(url, new=0, autoraise=True)
     loop.start()
 
