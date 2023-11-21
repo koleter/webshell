@@ -92,6 +92,7 @@ const Session: React.FC = () => {
     }}/>
     <Layout hasSider>
       <Sider
+        width={200}
         style={{height: "100vh", backgroundColor: 'white'}}>
         <SessionList
           sessions={sessions}
@@ -99,7 +100,9 @@ const Session: React.FC = () => {
           setActiveKey={setActiveKey}
         />
       </Sider>
-      <div style={{width: '2px', height: '100vh', cursor: 'col-resize'}}></div>
+      <div
+        style={{width: '2px', height: '100vh', cursor: 'col-resize'}}
+      ></div>
       <Content>
         <Tabs
           type="editable-card"
