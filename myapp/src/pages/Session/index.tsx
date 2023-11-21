@@ -92,7 +92,6 @@ const Session: React.FC = () => {
     }}/>
     <Layout hasSider>
       <Sider
-        width={200}
         style={{height: "100vh", backgroundColor: 'white'}}>
         <SessionList
           sessions={sessions}
