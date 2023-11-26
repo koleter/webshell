@@ -8,7 +8,7 @@ import {
 import {DataNode, TreeProps} from "antd/es/tree";
 import {request} from "@@/plugin-request/request";
 import util, {defineValidatorWithErrMessage} from "@/util";
-import {sessionIdMapFileName} from "@/pages/Session";
+import {sessionIdMapFileName} from "@/pages/Session/main";
 
 const {DirectoryTree} = Tree;
 let sessionRootKey = "";

@@ -4,7 +4,7 @@ import {Terminal} from "xterm"
 import "xterm/css/xterm.css"
 import util, {sleep, msgMap, sessionStatusMap, showMessage} from "../../../../util"
 import {DISCONNECTED, CONNECTING, CONNECTED} from "../../../../const"
-import {sessionIdRef, sessionIdMapFileName} from "../../index"
+import {sessionIdRef, sessionIdMapFileName} from "../../main"
 import {request} from 'umi';
 import "./index.less"
 

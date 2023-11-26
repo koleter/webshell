@@ -1,5 +1,6 @@
 import os.path
 import shutil
+import threading
 
 from handler.const import OPERATION_SUCCESS
 from handler.pojo.status import status_success, status_error
@@ -11,6 +12,7 @@ class BaseConfig:
         if not os.path.exists(path):
             os.makedirs(path)
         self.path = path
+        self.lock = threading.Lock()
 
     def _get_real_path(self, path):
         return os.path.join(self.path, path)

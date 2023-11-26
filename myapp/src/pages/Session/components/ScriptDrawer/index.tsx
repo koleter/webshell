@@ -4,7 +4,7 @@ import {ProList} from "@ant-design/pro-components";
 import {FormattedMessage} from "@@/plugin-locale/localeExports";
 import {request} from "@@/plugin-request/request";
 import util, {showMessage} from "@/util";
-import {sessionIdMapFileName, sessionIdRef} from "@/pages/Session";
+import {sessionIdMapFileName, sessionIdRef} from "@/pages/Session/main";
 
 const ScriptDrawer: React.FC = (props) => {
   const {activeKey, sessions, drawerOpen, setDrawerOpen} = props;
