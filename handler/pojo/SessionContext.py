@@ -10,12 +10,21 @@ class SessionContext:
         '''
         return self._worker.on_recv(data, sleep)
 
+    def prompts(self, msgs, callback, *args):
+        '''
+        Pop-up window to get multy user inputs
+        msgs: prompt informations, a list
+        args: The extra parameters of callback
+        callback: a callback function, the result of user inputs will be a parameter of callback, it has two args, callback(worker, args)
+        '''
+        return self._worker.prompts(msgs, callback, args)
+
     def prompt(self, msg, callback, *args):
         '''
         Pop-up window to get user input
         msg: prompt information
         callback: a callback function, it has at least two parameters, callback(ctx, user_input, *args)
-        args: The User-Defined parameters of callback
+        args: The extra User-Defined parameters of callback
         '''
         return self._worker.prompt(msg, callback, args)
 

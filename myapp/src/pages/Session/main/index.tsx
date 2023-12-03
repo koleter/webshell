@@ -88,7 +88,7 @@ const SessionMain: React.FC = () => {
           position: 'absolute',
           right: '0',
           bottom: 0,
-          width: '10px',
+          width: '6px',
           height: '95%',
           zIndex: 999
         }} onMouseEnter={() => {

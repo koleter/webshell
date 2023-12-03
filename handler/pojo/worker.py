@@ -182,15 +182,37 @@ class Worker(object):
             elif update_handler:
                 self.update_handler(IOLoop.READ)
 
+    def prompts(self, msgs, callback, args):
+        '''
+        Pop-up window to get multy user inputs
+        msgs: prompt informations, a list
+        args: The extra parameters of callback
+        callback: a callback function, the result of user inputs will be a parameter of callback, it has two args, callback(worker, args)
+        '''
+        if not msgs:
+            logging.error("msgs is None, do nothing")
+            return
+        if not isinstance(msgs, list):
+            logging.error("msgs should be a list")
+            return
+        message = {
+            'args': msgs,
+            'type': 'execMethod',
+            'method': 'prompts'
+        }
+        if callback:
+            self.set_callback_message(callback, message, args)
+        self.handler.write_message(message)
+
     def prompt(self, msg, callback, args):
         '''
         Pop-up window to get user input
         msg: prompt information
-        args: The parameters of callback
+        args: The extra parameters of callback
         callback: a callback function, the result of user input will be a parameter of callback, it has two args, callback(worker, args)
         '''
         message = {
-            'arg': msg,
+            'args': msg,
             'type': 'eval',
             'method': 'prompt'
         }
@@ -215,7 +237,7 @@ class Worker(object):
         callback: Callback function, the parameter is the SessionContext instance object corresponding to the newly created session list
         '''
         if not conf_list:
-            logging.info("conf_path_list is None, do notihing")
+            logging.error("conf_path_list is None, do nothing")
             return
 
         message = {

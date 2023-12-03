@@ -205,6 +205,14 @@ const Index: React.FC = (props) => {
           return data;
         });
       })
+    },
+    prompts: (msgs, callback) => {
+      const res = [];
+      for (const msg of msgs) {
+        const userInput = prompt(msg);
+        res.push(userInput);
+      }
+      callback && callback(res);
     }
   };
 
@@ -235,7 +243,7 @@ const Index: React.FC = (props) => {
           }
           break;
         case 'eval':
-          const result = eval(`${res.method}('${res.arg}')`);
+          const result = eval(`${res.method}('${res.args}')`);
           if (res.requestId) {
             sessionIdRef[id].send({
               type: 'callback',
