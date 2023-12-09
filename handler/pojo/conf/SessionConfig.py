@@ -62,7 +62,13 @@ class SessionConfig(BaseConfig):
             with open(origin_file, 'r') as f:
                 data = json.loads(f.read())
             data['sessionName'] += ' - 副本'
-            new_file_path = os.path.join(os.path.dirname(origin_file), gen_id())
+            file_name = gen_id()
+            data['key'] = file_name
+            login_script_list = data.get('login_script')
+            if login_script_list:
+                for entry in login_script_list:
+                    entry['id'] = gen_id()
+            new_file_path = os.path.join(os.path.dirname(origin_file), file_name)
             with open(new_file_path, 'w') as f:
                 f.write(json.dumps(data))
             return status_success('opration success')

@@ -7,7 +7,7 @@ import {
 } from '@ant-design/pro-components';
 import {DataNode, TreeProps} from "antd/es/tree";
 import {request} from "@@/plugin-request/request";
-import util, {defineValidatorWithErrMessage} from "@/util";
+import util, {defineValidatorWithErrMessage, getUUid} from "@/util";
 import {sessionIdMapFileName} from "@/pages/Session/main";
 
 const {DirectoryTree} = Tree;
@@ -171,7 +171,7 @@ const SessionList: React.FC = (props) => {
       recordCreatorProps={{
         newRecordType: 'dataSource',
         record: () => ({
-          id: Date.now(),
+          id: getUUid(),
         }),
       }}
       editable={{
