@@ -112,14 +112,17 @@ const Index: React.FC = (props) => {
 
     term.onData(function () {
       let str = "";
+      const keySet = new Set(["\r", "\n", "\t", "\x7f", "\u0001","\u0004", "\u0003"]);
       return function (data) {
+        // console.log(data.toString());
         str += data;
-        if (data.indexOf("\r") >= 0 || data.indexOf("\n") >= 0) {
+        if (keySet.has(data)) {
           console.log(`onData: ${id}, data: ${str}`);
           sock.send(JSON.stringify({'data': str, 'type': 'data'}));
           str = "";
+        } else {
+          term.write(data);
         }
-        term.write(data);
       }
     }());
 
