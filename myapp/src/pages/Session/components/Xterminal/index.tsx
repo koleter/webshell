@@ -114,7 +114,7 @@ const Index: React.FC = (props) => {
       let str = "";
       const keySet = new Set(["\r", "\n", "\t", "\x7f", "\u0001","\u0004", "\u0003"]);
       return function (data) {
-        // console.log(data.toString());
+        console.log(data.toString());
         str += data;
         if (keySet.has(data)) {
           console.log(`onData: ${id}, data: ${str}`);
