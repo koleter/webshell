@@ -124,6 +124,8 @@ class Worker(object):
         self.data_to_dst.append(newline)
         self._on_write()
         time.sleep(sleep)
+        while not self.chan.recv_ready():
+            time.sleep(0.1)
 
         data = b""
         try:
@@ -147,8 +149,7 @@ class Worker(object):
             self.handler.write_message(res, binary=False)
         except tornado.websocket.WebSocketClosedError:
             self.close(reason='websocket closed')
-        i = find_sub_str_index(val, "\n", 3)
-        val = val[i+1:]
+
         handler_str = reset_font(val)
         return str(handler_str)
 

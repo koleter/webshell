@@ -9,6 +9,7 @@ import {request} from 'umi';
 import "./index.less"
 
 const termOptions = {
+  rendererType: "canvas",
   fontSize: 12,
   cursorBlink: true,
   theme: {
@@ -109,10 +110,18 @@ const Index: React.FC = (props) => {
       console.error(e);
     };
 
-    term.onData(function (data) {
-      console.log(`onData: ${id}, data: ${data}`);
-      sock.send(JSON.stringify({'data': data, 'type': 'data'}));
-    });
+    term.onData(function () {
+      let str = "";
+      return function (data) {
+        str += data;
+        if (data.indexOf("\r") >= 0 || data.indexOf("\n") >= 0) {
+          console.log(`onData: ${id}, data: ${str}`);
+          sock.send(JSON.stringify({'data': str, 'type': 'data'}));
+          str = "";
+        }
+        term.write(data);
+      }
+    }());
 
     window.onresize = function () {
       resize_terminal(term);
