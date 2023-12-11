@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from "react";
 import React from "react";
 import {Terminal} from "xterm"
 import "xterm/css/xterm.css"
-import util, {sleep, msgMap, sessionStatusMap, showMessage} from "../../../../util"
+import util, {sleep, msgMap, sessionStatusMap, showMessage, getUUid} from "../../../../util"
 import {DISCONNECTED, CONNECTING, CONNECTED} from "../../../../const"
 import {sessionIdRef, sessionIdMapFileName} from "../../main"
 import {request} from 'umi';
@@ -31,9 +31,6 @@ const Index: React.FC = (props) => {
     const ws_url = util.baseUrl.split(/\?|#/, 1)[0].replace('http', 'ws'),
       join = (ws_url[ws_url.length - 1] === '/' ? '' : '/'),
       url = ws_url + join + 'ws?id=' + id,
-      url_opts_data = {
-        command: ''
-      },
       encoding = 'utf-8',
       decoder = window.TextDecoder ? new window.TextDecoder(encoding) : encoding;
 
@@ -45,11 +42,6 @@ const Index: React.FC = (props) => {
     sock.onopen = function () {
       term.open(terminalRef.current as HTMLDivElement);
       term.focus();
-      if (url_opts_data.command) {
-        setTimeout(function () {
-          sock.send(JSON.stringify({'data': url_opts_data.command + '\r', 'type': 'data'}));
-        }, 500);
-      }
       resize_terminal(term);
       sessionStatusMap[id] = CONNECTED;
     };
@@ -65,7 +57,7 @@ const Index: React.FC = (props) => {
         sock.send(JSON.stringify({'data': data + '\r', 'type': 'data'}));
       },
       sendRecv: async function (data: string, maxRetryCount = 10, retryTime = 1000) {
-        const uid = genUUid();
+        const uid = getUUid();
         console.log(`uuid: ${uid}`)
 
         sock.send(JSON.stringify({'data': data + '\r', requestId: uid, 'type': 'sendRecv'}));
@@ -110,21 +102,26 @@ const Index: React.FC = (props) => {
       console.error(e);
     };
 
-    term.onData(function () {
-      let str = "";
-      const keySet = new Set(["\r", "\n", "\t", "\x7f", "\u0001","\u0004", "\u0003"]);
-      return function (data) {
-        console.log(data.toString());
-        str += data;
-        if (keySet.has(data)) {
-          console.log(`onData: ${id}, data: ${str}`);
-          sock.send(JSON.stringify({'data': str, 'type': 'data'}));
-          str = "";
-        } else {
-          term.write(data);
-        }
-      }
-    }());
+    // term.onData(function () {
+    //   let str = "";
+    //   const keySet = new Set(["\r", "\n", "\t", "\x7f", "\u0001","\u0004", "\u0003"]);
+    //   return function (data) {
+    //     console.log(data.toString());
+    //     str += data;
+    //     if (keySet.has(data)) {
+    //       console.log(`onData: ${id}, data: ${str}`);
+    //       sock.send(JSON.stringify({'data': str, 'type': 'data'}));
+    //       str = "";
+    //     } else {
+    //       term.write(data);
+    //     }
+    //   }
+    // }());
+
+    term.onData(function (data) {
+      // console.log(`onData: ${id}, data: ${data}`);
+      sock.send(JSON.stringify({'data': data, 'type': 'data'}));
+    });
 
     window.onresize = function () {
       resize_terminal(term);
@@ -230,7 +227,6 @@ const Index: React.FC = (props) => {
 
   useEffect(() => {
     function term_write(text) {
-      sessionIdRef[id].term.clearTextureAtlas();
       sessionIdRef[id].term.write(text);
     }
 
