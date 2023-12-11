@@ -230,6 +230,7 @@ const Index: React.FC = (props) => {
 
   useEffect(() => {
     function term_write(text) {
+      sessionIdRef[id].term.clearTextureAtlas();
       sessionIdRef[id].term.write(text);
     }
 
