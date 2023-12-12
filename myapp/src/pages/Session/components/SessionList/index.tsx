@@ -14,6 +14,9 @@ const {DirectoryTree} = Tree;
 let sessionRootKey = "";
 const defaultSessionPropertyActiveKey = 'baseInfo';
 
+// 记录session配置文件信息,conf_id -> conf_path
+export let sessionConfInfo = {};
+
 const SessionList: React.FC = (props) => {
   const {sessions, setSessions, setActiveKey} = props;
 
@@ -37,6 +40,7 @@ const SessionList: React.FC = (props) => {
       if (res.status !== 'success') {
         message[res.status](res.msg);
       }
+      Object.assign(sessionConfInfo, res.sessionConfInfo);
       sessionRootKey = res.defaultTreeData[0].key;
       setTreeData(res.defaultTreeData);
     })
@@ -224,15 +228,17 @@ const SessionList: React.FC = (props) => {
 
   /**
    *
+   * @param sessionConfId  session配置文件的id
    * @param filePath  session配置文件的路径
    * @param title     新建session会话的标题
    * @param callback  回调函数,参数是新创建的session会话的id
    */
-  async function createNewSession(filePath, title, callback) {
+  async function createNewSession(sessionConfId, filePath, title, callback) {
     // xterm-256color
-    request(util.baseUrl, {
+    request(util.baseUrl + "session", {
       method: 'POST',
       body: JSON.stringify({
+        sessionConfId,
         filePath
       }),
     }).then(res => {
@@ -245,7 +251,7 @@ const SessionList: React.FC = (props) => {
       }
       sessionIdMapFileName[res.id] = filePath.substr(filePath.lastIndexOf('\\') + 1);
       const data = [...sessions];
-      data.push({label: title, key: res.id, sessionConfId: filePath, isConnected: true});
+      data.push({label: title, key: res.id, sessionConfId: sessionConfId, sessionConfPath: filePath, isConnected: true});
       setSessions(data);
       setActiveKey(res.id);
       callback && callback(res.id);
@@ -270,7 +276,7 @@ const SessionList: React.FC = (props) => {
                 type: 'SessionConfig',
                 args: {
                   type: 'createDir',
-                  path: node.key ? node.key + '/' + dirName : dirName
+                  path: node.path ? node.path + '/' + dirName : dirName
                 }
               }),
             }).then(res => {
@@ -304,7 +310,7 @@ const SessionList: React.FC = (props) => {
                 type: 'SessionConfig',
                 args: {
                   type: 'duplicateSession',
-                  path: node.key
+                  path: node.path
                 }
               }),
             }).then(res => {
@@ -332,7 +338,7 @@ const SessionList: React.FC = (props) => {
                   type: 'SessionConfig',
                   args: {
                     type: 'readFile',
-                    path: node.key,
+                    path: node.path,
                   }
                 }),
               }).then(res => {
@@ -362,7 +368,7 @@ const SessionList: React.FC = (props) => {
                 type: 'SessionConfig',
                 args: {
                   type: 'deleteFile',
-                  path: node.key
+                  path: node.path
                 }
               }),
             }).then(res => {
@@ -387,21 +393,21 @@ const SessionList: React.FC = (props) => {
           if (!nodeData.isLeaf) {
             return;
           }
-          createNewSession(nodeData.key, nodeData.title);
+          createNewSession(nodeData.key, nodeData.path, nodeData.title);
         }}>{nodeData.title}</span>
       </Dropdown>
     );
   }
 
   const onDrop: TreeProps['onDrop'] = (info) => {
-    const dropKey = info.node.key;
-    const dragKey = info.dragNode.key;
+    const dropKey = info.node.path;
+    const dragKey = info.dragNode.path;
     let srcDir = dragKey;
     if (info.dragNode.isLeaf) {
       srcDir = dragKey.substr(0, dragKey.lastIndexOf("\\"));
     }
     let dstDir = dropKey;
-    if (info.dragNode.isLeaf) {
+    if (info.node.isLeaf) {
       dstDir = dropKey.substr(0, dropKey.lastIndexOf("\\"));
     }
     if (srcDir == dstDir) {
@@ -463,7 +469,7 @@ const SessionList: React.FC = (props) => {
                 type: 'SessionConfig',
                 args: {
                   type: 'renameDir',
-                  src: modalNode.key,
+                  src: modalNode.path,
                   dst: formInfo.title
                 }
               }),
@@ -483,7 +489,7 @@ const SessionList: React.FC = (props) => {
               type: 'SessionConfig',
               args: {
                 type: 'editSession',
-                src: modalNode.key,
+                src: modalNode.path,
                 sessionInfo: formInfo
               }
             }),
@@ -539,7 +545,7 @@ const SessionList: React.FC = (props) => {
               type: 'SessionConfig',
               args: {
                 type: 'addFile',
-                dir: modalNode.key,
+                dir: modalNode.path,
                 fileName: formInfo.sessionName,
                 content: JSON.stringify(formInfo)
               }

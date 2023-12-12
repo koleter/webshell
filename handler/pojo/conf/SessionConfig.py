@@ -9,7 +9,7 @@ from utils import gen_id
 
 
 class SessionConfig(BaseConfig):
-    def _file_listdir_dfs(self, parent_item, dir):
+    def _file_listdir_dfs(self, parent_item, dir, session_conf_info):
         for file in os.listdir(self._get_real_path(dir)):
             if not parent_item.get('children'):
                 parent_item.setdefault('children', [])
@@ -18,16 +18,19 @@ class SessionConfig(BaseConfig):
                 file_item = {
                     'title': file,
                     'key': relative_file_path,
+                    'path': relative_file_path,
                     'isLeaf': False
                 }
-                self._file_listdir_dfs(file_item, relative_file_path)
+                self._file_listdir_dfs(file_item, relative_file_path, session_conf_info)
                 parent_item.get('children').append(file_item)
             else:
                 with open(self._get_real_path(relative_file_path), 'r') as f:
                     data = json.loads(f.read())
+                session_conf_info[file] = relative_file_path
                 parent_item.get('children').append({
                     'title': data['sessionName'],
-                    'key': relative_file_path,
+                    'key': file,
+                    'path': relative_file_path,
                     'isLeaf': True
                 })
         def sort(item):
@@ -40,13 +43,16 @@ class SessionConfig(BaseConfig):
         default_root_dir = {
             'title': "默认文件夹",
             'key': '',
+            'path': "",
             'isLeaf': False
         }
+        session_conf_info =dict()
         if os.path.exists(self.path):
-            self._file_listdir_dfs(default_root_dir, '')
+            self._file_listdir_dfs(default_root_dir, '', session_conf_info)
         return {
             'status': 'success',
-            'defaultTreeData': [default_root_dir]
+            'defaultTreeData': [default_root_dir],
+            'sessionConfInfo': session_conf_info
         }
 
     def post(self, args):

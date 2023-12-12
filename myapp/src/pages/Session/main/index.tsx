@@ -3,7 +3,7 @@ import type {DataNode} from 'antd/es/tree';
 import React, {useState} from 'react';
 import "./index.less"
 import "xterm/css/xterm.css"
-import Index from "@/pages/Session/components/Xterminal";
+import SessionWindow from "@/pages/Session/components/Xterminal/sessionWindow";
 import ScriptDrawer from "@/pages/Session/components/ScriptDrawer";
 import SessionList from "@/pages/Session/components/SessionList";
 import util, {showMessage} from "@/util";
@@ -18,6 +18,7 @@ let startX;
 // 记录sessionId对应的文件名,这个用来过滤session可用的脚本
 export const sessionIdMapFileName = {};
 
+// 记录sessionId对应的sock等信息
 export const sessionIdRef = {};
 
 const loop = (
@@ -222,7 +223,7 @@ const SessionMain: React.FC = () => {
               onChange={onChange}/>
             {
               sessions.map(item => {
-                return <Index
+                return <SessionWindow
                   key={item.key}
                   id={item.key}
                   sessionConfId={item.sessionConfId}

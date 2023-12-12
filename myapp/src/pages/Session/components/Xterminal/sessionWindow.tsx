@@ -7,6 +7,7 @@ import {DISCONNECTED, CONNECTING, CONNECTED} from "../../../../const"
 import {sessionIdRef, sessionIdMapFileName} from "../../main"
 import {request} from 'umi';
 import "./index.less"
+import {sessionConfInfo} from "@/pages/Session/components/SessionList";
 
 const termOptions = {
   rendererType: "canvas",
@@ -22,7 +23,7 @@ const termOptions = {
 
 const style = {};
 
-const Index: React.FC = (props) => {
+const SessionWindow: React.FC = (props) => {
   const terminalRef = useRef<null | HTMLDivElement>(null);
   let {id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey} = props;
   // console.log(id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey);
@@ -142,17 +143,33 @@ const Index: React.FC = (props) => {
         var body;
         switch (Object.prototype.toString.call(sessionConf)) {
           case "[object String]":
+            if (!(sessionConf in sessionConfInfo)) {
+              showMessage({
+                    status: 'error',
+                    content: `invalid sessionConfId: ${sessionConf}`
+                  });
+              return;
+            }
             body = {
-              filePath: sessionConf
+              sessionConfId: sessionConf,
+              filePath: sessionConfInfo[sessionConf]
             };
             break;
           case '[object Object]':
+            if (!(sessionConf.conf_id in sessionConfInfo)) {
+              showMessage({
+                    status: 'error',
+                    content: `invalid sessionConfId: ${sessionConf.conf_id}`
+                  });
+              return;
+            }
             body = {
-              filePath: sessionConf.conf_id,
+              sessionConfId: sessionConf.conf_id,
+              filePath: sessionConfInfo[sessionConf.conf_id],
               sessionName: sessionConf.session_name
             };
         }
-        arr.push(request(util.baseUrl, {
+        arr.push(request(util.baseUrl + "session", {
           method: 'POST',
           body: JSON.stringify(body),
         }));
@@ -321,4 +338,4 @@ const Index: React.FC = (props) => {
 }
 
 // export default React.memo(Xterminal);
-export default Index;
+export default SessionWindow;
