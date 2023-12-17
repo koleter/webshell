@@ -25,8 +25,7 @@ const style = {};
 
 const SessionWindow: React.FC = (props) => {
   const terminalRef = useRef<null | HTMLDivElement>(null);
-  let {id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey} = props;
-  // console.log(id, sessionConfId, activeKey, sessions, setSessions, removeTabByKey);
+  const {id, sessions, setSessions} = props;
 
   useEffect(() => {
     const ws_url = util.baseUrl.split(/\?|#/, 1)[0].replace('http', 'ws'),
@@ -326,9 +325,7 @@ const SessionWindow: React.FC = (props) => {
 
   const renderElement = () => {
     return (
-      <div style={{display: id === activeKey ? 'block' : 'none'}}>
-        <div ref={terminalRef}></div>
-      </div>
+      <div ref={terminalRef}></div>
     )
   }
 

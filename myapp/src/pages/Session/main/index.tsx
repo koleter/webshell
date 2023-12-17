@@ -138,6 +138,7 @@ const SessionMain: React.FC = () => {
           ></div>
           <Content style={{width: '100%', overflow: 'hidden'}}>
             <Tabs
+              id={"sessionTabs"}
               type="editable-card"
               activeKey={activeKey}
               hideAdd
@@ -155,7 +156,8 @@ const SessionMain: React.FC = () => {
 
                 return {
                   label: (
-                    <Dropdown menu={{
+                    <Dropdown
+                      menu={{
                       items: [
                         {
                           label: (
@@ -215,25 +217,18 @@ const SessionMain: React.FC = () => {
                     </Dropdown>
 
                   ),
-                  key: item.key
+                  key: item.key,
+                  forceRender: true,
+                  children: <SessionWindow
+                    key={item.key}
+                    id={item.key}
+                    sessions={sessions}
+                    setSessions={setSessions}
+                  />
                 }
               })}
-              style={{marginBottom: 0}}
               onEdit={onEdit}
               onChange={onChange}/>
-            {
-              sessions.map(item => {
-                return <SessionWindow
-                  key={item.key}
-                  id={item.key}
-                  sessionConfId={item.sessionConfId}
-                  activeKey={activeKey}
-                  sessions={sessions}
-                  setSessions={setSessions}
-                  removeTabByKey={removeTabByKey}
-                />
-              })
-            }
           </Content>
         </Layout>
 

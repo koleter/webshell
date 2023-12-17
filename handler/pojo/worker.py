@@ -8,7 +8,7 @@ import threading
 import time
 
 from handler.pojo.SessionContext import SessionContext
-from utils import reset_font, gen_id, find_sub_str_index
+from utils import reset_font, gen_id
 
 try:
     import secrets
