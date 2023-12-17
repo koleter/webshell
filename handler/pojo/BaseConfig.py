@@ -77,10 +77,3 @@ class BaseConfig:
                     'content': f.read()
                 }
         return status_error("unknown exception")
-
-if __name__ == '__main__':
-    a = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-
-    b = "H"
-
-    print(a[a.rfind(b):])

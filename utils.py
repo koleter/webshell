@@ -224,9 +224,3 @@ def reset_font(s):
 def gen_id():
     return secrets.token_urlsafe(nbytes=32) if secrets else uuid4().hex
 
-
-if __name__ == '__main__':
-    text = '/\r\n\x1b[30;42m[ID ] IP               Port   Hostname              Region          \x1b[0m\r\n\x1b[1;32mOpt or ID>:\x1b[0m'
-
-    # ret = reset_font(str(text, 'utf-8'))
-    print(text)

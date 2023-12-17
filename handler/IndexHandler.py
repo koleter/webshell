@@ -20,7 +20,7 @@ from utils import (
     is_valid_ip_address, is_valid_port, is_valid_hostname, to_str,
     to_int, is_valid_encoding
 )
-from handler.pojo.worker import Worker, recycle_worker, workers
+from handler.pojo.worker import Worker, recycle_worker, workers, workers_lock
 
 try:
     from json.decoder import JSONDecodeError
@@ -212,7 +212,8 @@ class IndexHandler(MixinHandler, tornado.web.RequestHandler):
             self.result.update(status=str(exc))
         else:
             worker.xsh_conf_id = data['sessionConfId']
-            workers[worker.id] = worker
+            with workers_lock:
+                workers[worker.id] = worker
             # self.loop.call_later(options.delay, recycle_worker, worker)
             self.result.update(id=worker.id, encoding=worker.encoding)
             self.result.update(sessionName=session_conf['sessionName'])

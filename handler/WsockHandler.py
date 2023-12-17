@@ -10,9 +10,9 @@ from tornado.ioloop import IOLoop
 
 from exception.InvalidValueError import InvalidValueError
 from handler.MixinHandler import MixinHandler
-from handler.const import callback_map
+from handler.const import callback_map, callback_map_lock
 from handler.pojo.SessionContext import SessionContext
-from handler.pojo.worker import workers, clear_worker
+from handler.pojo.worker import workers, clear_worker, workers_lock
 from utils import (
     UnicodeType
 )
@@ -39,7 +39,8 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
         except (tornado.web.MissingArgumentError, InvalidValueError) as exc:
             self.close(reason=str(exc))
         else:
-            worker = workers.get(worker_id)
+            with workers_lock:
+                worker = workers.get(worker_id)
             if worker:
                 self.set_nodelay(True)
                 worker.set_handler(self)
@@ -116,7 +117,8 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 })
         elif type == 'callback':
             requestId = msg.get('requestId')
-            t = callback_map.get(requestId)
+            with callback_map_lock:
+                t = callback_map.get(requestId)
             if not t:
                 worker.handler.write_message({
                     'type': 'message',
@@ -129,7 +131,8 @@ class WsockHandler(MixinHandler, tornado.websocket.WebSocketHandler):
                 traceback.print_exc()
                 pass
             finally:
-                callback_map.pop(requestId, None)
+                with callback_map_lock:
+                    callback_map.pop(requestId, None)
 
     def on_close(self):
         if not self.close_reason:

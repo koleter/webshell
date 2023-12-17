@@ -19,9 +19,10 @@ import tornado.websocket
 from tornado.ioloop import IOLoop
 from tornado.iostream import _ERRNO_CONNRESET
 from tornado.util import errno_from_exception
-from handler.const import BUF_SIZE, callback_map
+from handler.const import BUF_SIZE, callback_map, callback_map_lock
 
 workers = {}  # {id: worker}
+workers_lock = threading.Lock()
 
 # logger = logging.getLogger(__name__)
 # console_fmt = "%(name)s--->%(levelname)s--->%(asctime)s--->%(message)s--->%(filename)s:%(lineno)d"
@@ -30,8 +31,9 @@ workers = {}  # {id: worker}
 
 
 def clear_worker(worker):
-    assert worker.id in workers
-    workers.pop(worker.id)
+    with workers_lock:
+        assert worker.id in workers
+        workers.pop(worker.id)
 
 
 def recycle_worker(worker):
@@ -226,9 +228,11 @@ class Worker(object):
             raise Exception("callback must be a function")
         req_id = str(uuid.uuid1())
         message['requestId'] = req_id
-        callback_map[req_id] = (callback, args)
+        with callback_map_lock:
+            callback_map[req_id] = (callback, args)
         def delete_callback():
-            callback_map.pop(req_id, None)
+            with callback_map_lock:
+                callback_map.pop(req_id, None)
         threading.Timer(30, delete_callback).start()
 
     def create_new_session(self, conf_list, callback, args):
@@ -260,7 +264,9 @@ class Worker(object):
         def warp(ctx, session_infos, *args):
             context_list = []
             for session_info in session_infos:
-                context_list.append(SessionContext(workers[session_info['id']]))
+                with workers_lock:
+                    worker = workers[session_info['id']]
+                context_list.append(SessionContext(worker))
             callback(ctx, context_list, *args)
 
         return warp

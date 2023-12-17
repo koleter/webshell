@@ -20,6 +20,7 @@ handler_map = {
     'GlobalAutoConfig': GlobalAutoConfig(global_dir_path)
 }
 
+
 class ConfigHandler(MixinHandler, tornado.web.RequestHandler):
     def initialize(self, loop):
         super(ConfigHandler, self).initialize(loop)
