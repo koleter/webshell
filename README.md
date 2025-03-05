@@ -1,5 +1,6 @@
 # WebShell
 
+该项目不再维护,感兴趣可以关注我的另一个项目: https://github.com/koleter/elecshell
 
 ### Introduction
 
